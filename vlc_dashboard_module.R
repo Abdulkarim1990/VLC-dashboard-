@@ -267,214 +267,85 @@ vlc_ui <- tabItem(
   ),
   
   # --------------------------------------------------------------------------
-  # SECTION 1 — ABOUT VLC (Landing / Explainer Panel)
+  # SECTION 1 — EXECUTIVE HEADER + STORY HUB
   # --------------------------------------------------------------------------
   fluidRow(
     box(
       width = 12,
       status = "warning",
       solidHeader = FALSE,
-      
       div(
-        style = "background: linear-gradient(135deg, #2C3E50 0%, #1a252f 100%);
-                 border-radius: 8px; padding: 30px; color: white; margin-bottom: 5px;",
-        
-        # Header
+        style = "background: linear-gradient(135deg, #1F2D3D 0%, #2C3E50 100%); border-radius: 10px; padding: 24px; color: #ECF0F1;",
         fluidRow(
-          column(8,
-            h2(
-              icon("book-open"),
-              " Essential Values for Ghanaian Youth",
-              style = "color: #E6A817; font-weight: bold; margin-top: 0;"
+          column(
+            8,
+            h2(icon("compass"), " VLC Command Centre", style = "margin-top: 0; color: #E6A817; font-weight: 700;"),
+            p(
+              "Track coverage, participation, and equity signals in real time, then move directly to intervention lists and regional action.",
+              style = "font-size: 14px; color: #D6DBDF; margin-bottom: 8px;"
             ),
-            h4("Values Learning Community (VLC) — National Monitoring Dashboard",
-               style = "color: #BDC3C7; margin-top: 5px;")
-          ),
-          column(4,
-            div(
-              style = "text-align: right; padding-top: 10px;",
-              tags$img(
-                src = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/200px-Flag_of_Ghana.svg.png",
-                height = "50px", style = "margin-right: 10px;"
-              ),
-              tags$span(
-                "GES | NaCCA | T-TEL | NUGS",
-                style = "color: #E6A817; font-size: 12px; display: block; margin-top: 5px;"
-              )
-            )
-          )
-        ),
-        
-        hr(style = "border-color: #E6A817; margin: 15px 0;"),
-        
-        # What is the VLC — three columns
-        fluidRow(
-          
-          column(4,
-            div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #E6A817;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("question-circle"), " What is the VLC?",
-                 style = "color: #E6A817; font-weight: bold;"),
-              p(
-                "The ", tags$strong(style = "color:#E6A817;", "Values Learning Community (VLC)"),
-                " is a weekly, student-led session held in every Senior High School across Ghana. 
-                While teachers attend their ", tags$em("Professional Learning Community (PLC)"),
-                " sessions, learners engage in structured peer-facilitated discussions guided by 
-                the Essential Values Handbook. Each 90-minute session is led by two trained 
-                ", tags$strong("Peer Guides"), " — classmates selected for their integrity and 
-                communication skills.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
+            tags$div(
+              style = "display:flex; gap:8px; flex-wrap: wrap;",
+              tags$span(style = "background:#E6A81733; border:1px solid #E6A817; border-radius:16px; padding:4px 10px; font-size:11px;", "National monitoring"),
+              tags$span(style = "background:#27AE6033; border:1px solid #27AE60; border-radius:16px; padding:4px 10px; font-size:11px;", "Story-led insights"),
+              tags$span(style = "background:#2980B933; border:1px solid #2980B9; border-radius:16px; padding:4px 10px; font-size:11px;", "Action-first triage")
             )
           ),
-          
-          column(4,
+          column(
+            4,
             div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #27AE60;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("book"), " The Handbook",
-                 style = "color: #27AE60; font-weight: bold;"),
-              p(
-                "Published by the ", tags$strong("Ministry of Education Ghana"),
-                " in partnership with GES, NaCCA, T-TEL, NUGS, Lead for Ghana, and Honour Ghana,
-                the handbook was ", tags$em("written by young people for young people"),
-                ". It covers ", tags$strong("11 core values"), " across ",
-                tags$strong("22 sessions"), " spanning the full academic year — 
-                from ", tags$em("Responsible Citizenship"), " and ", tags$em("Integrity"),
-                " to ", tags$em("Leadership"), " and ", tags$em("Building Confidence"),
-                ". Each value is taught in an Understanding session, 
-                then practised in an Applying session.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
-            )
-          ),
-          
-          column(4,
-            div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #2980B9;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("bullseye"), " Why It Matters",
-                 style = "color: #2980B9; font-weight: bold;"),
-              p(
-                "The VLC addresses Ghana's national commitment to holistic education — 
-                developing not just academic knowledge ", tags$em("(The Head)"),
-                ", but also values and character ", tags$em("(The Heart)"),
-                " and practical skills ", tags$em("(The Hand)"),
-                ". GES Director-General Prof. Ernest Kofi Davis notes that 
-                character formation ", tags$em('"enhances academic achievement"'),
-                ". This dashboard monitors whether Ghana's 721 SHS are reaching their 
-                students with this transformative programme every week.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
-            )
-          )
-        ),
-        
-        # Values journey strip
-        div(
-          style = "margin-top: 20px;",
-          h5(icon("road"), " The 11-Value Journey (22 Sessions)",
-             style = "color: #E6A817; font-weight: bold; margin-bottom: 10px;"),
-          
-          div(
-            style = "display: flex; flex-wrap: wrap; gap: 8px;",
-            
-            lapply(
-              list(
-                list("Responsible Citizenship", "#E74C3C"),
-                list("Honesty", "#E67E22"),
-                list("Integrity", "#F39C12"),
-                list("Diversity", "#27AE60"),
-                list("Equity", "#16A085"),
-                list("Discipline", "#2980B9"),
-                list("Self-Directed Learning", "#8E44AD"),
-                list("Adaptability", "#D35400"),
-                list("Resourcefulness", "#1ABC9C"),
-                list("Leadership", "#BDC3C7"),
-                list("Building Confidence", "#C0392B")
-              ),
-              function(v) {
-                div(
-                  style = glue(
-                    "background: {v[[2]]}22; border: 1px solid {v[[2]]};
-                     border-radius: 20px; padding: 4px 12px; font-size: 11px;
-                     color: white; white-space: nowrap;"
-                  ),
-                  icon("circle", style = glue("color: {v[[2]]}; font-size: 8px;")),
-                  " ", v[[1]]
-                )
-              }
+              style = "background: rgba(255,255,255,0.06); border-radius: 8px; padding: 14px;",
+              h5(icon("tasks"), " Decision Focus", style = "color:#E6A817; margin-top: 0;"),
+              p("1) Are schools consistently running VLC?", style = "font-size: 12px; margin-bottom: 4px;"),
+              p("2) Are learners attending at healthy rates?", style = "font-size: 12px; margin-bottom: 4px;"),
+              p("3) Which regions/schools require immediate follow-up?", style = "font-size: 12px; margin-bottom: 0;")
             )
           )
         )
       )
     )
   ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 2 — NARRATIVE STORY HEADER (Dynamic Data Story)
-  # --------------------------------------------------------------------------
+
   fluidRow(
     box(
       width = 12,
       status = "warning",
       solidHeader = TRUE,
-      title = tagList(icon("rss"), " Ghana's Values Formation Pulse — Live Data Story"),
-      
+      title = tagList(icon("rss"), " National Storyline — Live Programme Pulse"),
       div(
-        style = "background: #FDF6E3; border-radius: 6px; padding: 20px;",
-        
-        # Main narrative paragraph
+        style = "background: #FDF6E3; border-radius: 8px; padding: 18px;",
         div(
-          style = "font-size: 15px; line-height: 1.9; color: #2C3E50; 
-                   border-left: 5px solid #E6A817; padding-left: 15px;",
+          style = "font-size: 15px; line-height: 1.85; color: #2C3E50; border-left: 5px solid #E6A817; padding-left: 14px;",
           uiOutput("vlc_narrative_text")
         ),
-        
         hr(),
-        
-        # Three signal cards below the narrative
         fluidRow(
-          
           column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #27AE60; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
+            div(style = "background:#FFFFFF; border-radius:8px; border-top:3px solid #27AE60; padding:14px; text-align:center;",
               uiOutput("vlc_signal_coverage"),
-              p("National School Coverage",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
+              p("National School Coverage", style = "color:#7F8C8D; font-size:12px; margin:0;")
             )
           ),
-          
           column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #2980B9; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
+            div(style = "background:#FFFFFF; border-radius:8px; border-top:3px solid #2980B9; padding:14px; text-align:center;",
               uiOutput("vlc_signal_learners"),
-              p("Cumulative Learner Touchpoints",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
+              p("Cumulative Learner Touchpoints", style = "color:#7F8C8D; font-size:12px; margin:0;")
             )
           ),
-          
           column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #E74C3C; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
+            div(style = "background:#FFFFFF; border-radius:8px; border-top:3px solid #E74C3C; padding:14px; text-align:center;",
               uiOutput("vlc_signal_attention"),
-              p("Schools Requiring Follow-up",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
+              p("Schools Requiring Follow-up", style = "color:#7F8C8D; font-size:12px; margin:0;")
             )
           )
-        )
+        ),
+        br(),
+        uiOutput("vlc_action_story")
       )
     )
   ),
-  
-  # --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
   # SECTION 3 — KEY PERFORMANCE INDICATORS
   # --------------------------------------------------------------------------
   fluidRow(
@@ -779,12 +650,25 @@ vlc_server <- function(input, output, session) {
   
   vlc_raw <- reactive({
     # Replace this path with your actual data source / API call
-    read.csv("vlc_data_nat.csv", stringsAsFactors = FALSE)
+    tryCatch({
+      read.csv("vlc_data_nat.csv", stringsAsFactors = FALSE)
+    }, error = function(e) {
+      warning(glue("Failed to load vlc_data_nat.csv: {e$message}"))
+      data.frame()
+    })
   })
   
   vlc_data <- reactive({
-    prepare_vlc_data(vlc_raw())
+    raw <- vlc_raw()
+    validate(need(nrow(raw) > 0, "No VLC data could be loaded from vlc_data_nat.csv"))
+    prepare_vlc_data(raw)
   })
+
+  safe_pct <- function(x, digits = 1) {
+    x <- suppressWarnings(as.numeric(x))
+    if (length(x) == 0 || all(is.na(x))) return(0)
+    round(mean(x, na.rm = TRUE), digits)
+  }
   
   # Populate dynamic filter choices
   observe({
@@ -851,11 +735,11 @@ vlc_server <- function(input, output, session) {
     total_submissions    <- nrow(all)
     total_sessions_held  <- nrow(df)
     total_students       <- sum(df$total_attended, na.rm = TRUE)
-    avg_participation    <- mean(df$participation_pct, na.rm = TRUE)
-    ht_present_pct       <- mean(df$headteacher_present, na.rm = TRUE) * 100
-    gcc_present_pct      <- mean(df$gcc_present, na.rm = TRUE) * 100
+    avg_participation    <- safe_pct(df$participation_pct)
+    ht_present_pct       <- safe_pct(df$headteacher_present * 100)
+    gcc_present_pct      <- safe_pct(df$gcc_present * 100)
     sessions_with_disab  <- sum(df$disability_included == TRUE, na.rm = TRUE)
-    disability_rate      <- mean(df$disability_included == TRUE, na.rm = TRUE) * 100
+    disability_rate      <- safe_pct((df$disability_included == TRUE) * 100)
     
     # Schools that have not submitted anything
     coverage_pct <- (schools_reporting / TOTAL_SCHOOLS_NATIONAL) * 100
@@ -900,100 +784,103 @@ vlc_server <- function(input, output, session) {
   # --------------------------------------------------------------------------
   
   output$vlc_narrative_text <- renderUI({
-    s   <- vlc_stats()
-    df  <- vlc_filtered()
-    
-    # Most delivered session
-    top_session <- df %>%
+    s <- vlc_stats()
+    d <- vlc_filtered()
+
+    if (nrow(d) == 0) {
+      return(tags$p("No held VLC sessions found for the selected filters. Adjust filters to restore the national story.",
+                    style = "margin: 0; color: #E74C3C;"))
+    }
+
+    date_str <- format(s$latest_date, "%d %b %Y")
+
+    top_session <- d %>%
       count(session_clean, sort = TRUE) %>%
       slice(1) %>%
       pull(session_clean)
-    if (length(top_session) == 0) top_session <- "N/A"
-    
-    # Top region
-    top_region <- df %>%
+    if (length(top_session) == 0 || is.na(top_session)) top_session <- "N/A"
+
+    top_region <- d %>%
       count(Region_hbk5, sort = TRUE) %>%
       slice(1) %>%
       pull(Region_hbk5)
-    if (length(top_region) == 0) top_region <- "N/A"
-    
-    # Attendance trend - compare last 2 weeks
-    weekly_counts <- df %>%
+    if (length(top_region) == 0 || is.na(top_region)) top_region <- "N/A"
+
+    weekly <- d %>%
+      filter(!is.na(session_date)) %>%
       mutate(week = floor_date(session_date, "week")) %>%
       count(week) %>%
       arrange(week)
-    
-    trend_word <- if (nrow(weekly_counts) >= 2) {
-      last2 <- tail(weekly_counts$n, 2)
-      if (last2[2] > last2[1]) "increasing" else if (last2[2] < last2[1]) "declining" else "stable"
-    } else "developing"
-    
-    # Date context
-    date_str <- if (!is.na(s$latest_date)) format(s$latest_date, "%d %B %Y") else "the current period"
-    
+
+    trend_word <- "stable"
+    if (nrow(weekly) >= 4) {
+      recent <- mean(tail(weekly$n, 2))
+      prior  <- mean(head(tail(weekly$n, 4), 2))
+      trend_word <- case_when(
+        recent > prior * 1.10 ~ "accelerating",
+        recent < prior * 0.90 ~ "declining",
+        TRUE ~ "stable"
+      )
+    }
+
     tagList(
       p(
         "As of ", tags$strong(date_str), ", ",
-        tags$strong(
-          style = "color: #E6A817; font-size: 17px;",
-          format(s$schools_reporting, big.mark = ",")
-        ),
-        " of Ghana's ",
-        tags$strong(format(TOTAL_SCHOOLS_NATIONAL, big.mark = ",")),
-        " Senior High Schools (",
-        tags$strong(
-          style = glue("color: {if(s$coverage_pct >= 70) '#27AE60' else if(s$coverage_pct >= 50) '#E67E22' else '#E74C3C'};"),
-          paste0(s$coverage_pct, "%")
-        ),
-        " national coverage) have submitted VLC session data. Across ",
-        tags$strong(
-          style = "color: #2980B9; font-size: 17px;",
-          format(s$total_sessions_held, big.mark = ",")
-        ),
-        " sessions held, a cumulative ",
-        tags$strong(
-          style = "color: #8E44AD; font-size: 17px;",
-          format(s$total_students, big.mark = ",")
-        ),
-        " learner touchpoints have been recorded, with an average attendance rate of ",
-        tags$strong(
-          style = glue("color: {if(s$avg_participation >= 75) '#27AE60' else if(s$avg_participation >= 55) '#E67E22' else '#E74C3C'};"),
-          paste0(s$avg_participation, "%")
-        ),
-        ".",
+        tags$strong(style = "color:#E6A817;", format(s$schools_reporting, big.mark = ",")),
+        " schools have reported, covering ", tags$strong(paste0(s$coverage_pct, "%")),
+        " of Ghana's SHS footprint. The system has logged ",
+        tags$strong(style = "color:#2980B9;", format(s$total_sessions_held, big.mark = ",")),
+        " held VLC sessions and ", tags$strong(style = "color:#8E44AD;", format(s$total_students, big.mark = ",")),
+        " learner touchpoints, with national attendance at ",
+        tags$strong(paste0(s$avg_participation, "%")), ".",
         style = "margin-bottom: 10px;"
       ),
       p(
-        "The most frequently delivered session nationally is ",
-        tags$em(tags$strong(style = "color: #E6A817;", top_session)),
-        ". The ", tags$strong(top_region), " region leads in total session submissions. 
-         School leadership engagement — a key quality signal — shows headteachers present in ",
-        tags$strong(
-          style = glue("color: {if(s$ht_present_pct >= 60) '#27AE60' else '#E74C3C'};"),
-          paste0(s$ht_present_pct, "%")
-        ),
-        " of sessions, and Guidance & Counselling officers in ",
-        tags$strong(paste0(s$gcc_present_pct, "%")),
-        ". On disability inclusion, ",
-        tags$strong(paste0(s$disability_rate, "%")),
-        " of sessions have recorded learners with disabilities participating — 
-         a direct measure of the equity values being taught. ",
-        "Weekly submission momentum is currently ",
-        tags$strong(
-          style = glue("color: {if(trend_word == 'increasing') '#27AE60' else if(trend_word == 'declining') '#E74C3C' else '#E67E22'};"),
-          trend_word
-        ),
-        ". ",
-        tags$strong(
-          style = "color: #E74C3C;",
-          format(nrow(s$low_schools), big.mark = ",")
-        ),
-        " schools are flagged for priority follow-up.",
+        "Delivery is currently ",
+        tags$strong(style = glue("color: {if(trend_word == 'accelerating') '#27AE60' else if(trend_word == 'declining') '#E74C3C' else '#E67E22'};"), trend_word),
+        ". The most delivered session is ", tags$em(tags$strong(style = "color:#E6A817;", top_session)),
+        ", while ", tags$strong(top_region), " leads total submissions. Leadership presence remains a quality barometer: ",
+        tags$strong(paste0(s$ht_present_pct, "%")), " headteacher presence and ",
+        tags$strong(paste0(s$gcc_present_pct, "%")), " G&C presence. ",
+        tags$strong(format(nrow(s$low_schools), big.mark = ",")),
+        " schools are currently in the priority follow-up pool.",
         style = "margin-bottom: 0;"
       )
     )
   })
-  
+
+
+  output$vlc_action_story <- renderUI({
+    s <- vlc_stats()
+    region_scores <- vlc_filtered() %>%
+      group_by(Region_hbk5) %>%
+      summarise(
+        schools = n_distinct(Name_school_hbk5),
+        sessions = n(),
+        avg_participation = safe_pct(participation_pct),
+        .groups = "drop"
+      ) %>%
+      mutate(intensity = if_else(schools > 0, round(sessions / schools, 2), 0)) %>%
+      arrange(desc(intensity), desc(avg_participation))
+
+    leader <- if (nrow(region_scores) > 0) region_scores$Region_hbk5[1] else "N/A"
+    leader_intensity <- if (nrow(region_scores) > 0) region_scores$intensity[1] else 0
+    followups <- nrow(s$low_schools)
+
+    tagList(
+      div(
+        style = "background: #FFFFFF; border-radius: 6px; border-left: 4px solid #2C3E50; padding: 14px;",
+        tags$h5(icon("compass"), " Immediate Action Brief (auto-generated)", style = "margin-top: 0; color: #2C3E50;"),
+        tags$ul(
+          style = "margin-bottom: 0; line-height: 1.8; color: #34495E;",
+          tags$li(tags$strong("Scale strong practice:"), " ", leader, " currently leads session intensity (", leader_intensity, " sessions/school)."),
+          tags$li(tags$strong("Stabilize attendance quality:"), " national average attendance is ", s$avg_participation, "%; focus coaching where schools are below 50%."),
+          tags$li(tags$strong("Deploy rapid follow-up:"), " ", followups, " schools are flagged as priority intervention (low sessions or low participation).")
+        )
+      )
+    )
+  })
+
   # Signal cards
   output$vlc_signal_coverage <- renderUI({
     s <- vlc_stats()
