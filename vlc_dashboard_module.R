@@ -681,7 +681,7 @@ vlc_ui <- tabItem(
           # Hero Banner
           div(
             class = "vlc-hero",
-            div(class = "vlc-hero-badge", "GES | NaCCA | T-TEL | NUGS"),
+            div(class = "vlc-hero-badge", "GES | NaCCA | NUGS"),
             h1(class = "vlc-hero-title",
                icon("book-open"), " Essential Values for Ghanaian Youth"),
             p(class = "vlc-hero-sub",
@@ -728,7 +728,7 @@ vlc_ui <- tabItem(
                    Community (PLC) meetings, learners engage in peer-facilitated
                    discussions guided by the Essential Values Handbook. Each
                    90-minute session is facilitated by two trained ",
-                  tags$strong("Peer Guides"), " — classmates selected for their
+                  tags$strong("Peer Guides"), ": classmates selected for their
                    integrity and communication skills.")
               )
             ),
@@ -738,8 +738,8 @@ vlc_ui <- tabItem(
                     icon("book")),
                 h5(style = "color: #27AE60;", "The Handbook"),
                 p("Published by the ", tags$strong("Ministry of Education Ghana"),
-                  " in partnership with GES, NaCCA, T-TEL, NUGS, Lead for Ghana,
-                   and Honour Ghana — and ", tags$em("written by young people for
+                  " in partnership with GES, NaCCA, NUGS, Lead for Ghana,
+                   and Honour Ghana and ", tags$em("written by young people for
                    young people"), ". It covers ", tags$strong("11 core values"),
                   " across ", tags$strong("22 sessions"), " spanning the full
                    academic year. Each value is explored in an Understanding
@@ -756,7 +756,7 @@ vlc_ui <- tabItem(
                   tags$em("The Heart"), " (values and character), and ",
                   tags$em("The Hand"), " (practical skills). This dashboard
                    tracks whether all 721 SHS are delivering the programme
-                   each week — and identifies where support is needed most.")
+                   each week and identifies where support is needed most.")
               )
             )
           ),
@@ -765,7 +765,7 @@ vlc_ui <- tabItem(
           div(
             class = "vlc-values-strip",
             div(class = "strip-title",
-                icon("road"), " The 11-Value Journey — 22 Sessions Across the Year"),
+                icon("road"), " The 11-Value Journey: 22 Sessions Across the Year"),
             div(
               style = "display: flex; flex-wrap: wrap; align-items: center;",
               lapply(
