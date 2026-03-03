@@ -231,18 +231,356 @@ prepare_vlc_data <- function(raw_data) {
 
 vlc_ui <- tabItem(
   tabName = "vlc_monitor",
-  
-  # --------------------------------------------------------------------------
-  # FILTERS ROW
-  # --------------------------------------------------------------------------
+
+  # ── Custom CSS ─────────────────────────────────────────────────────────────
+  tags$style(HTML("
+
+    /* ── Main Tab Bar ──────────────────────────────────────────────────── */
+    #vlc_main_tabs > .nav-tabs {
+      background: #1B2A4A;
+      border-bottom: 3px solid #E6A817;
+      padding: 0 16px;
+      border-radius: 6px 6px 0 0;
+      margin-bottom: 0;
+    }
+    #vlc_main_tabs > .nav-tabs > li > a {
+      color: #A0AEC0 !important;
+      border: none !important;
+      border-bottom: 3px solid transparent !important;
+      border-radius: 0 !important;
+      padding: 13px 20px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      background: transparent !important;
+      margin-bottom: -3px;
+      transition: color 0.2s;
+    }
+    #vlc_main_tabs > .nav-tabs > li > a:hover {
+      color: #E6A817 !important;
+      border-bottom: 3px solid #E6A817 !important;
+    }
+    #vlc_main_tabs > .nav-tabs > li.active > a,
+    #vlc_main_tabs > .nav-tabs > li.active > a:focus,
+    #vlc_main_tabs > .nav-tabs > li.active > a:hover {
+      color: #E6A817 !important;
+      border-bottom: 3px solid #E6A817 !important;
+      background: transparent !important;
+    }
+    #vlc_main_tabs > .tab-content {
+      background: #F4F6F9;
+      border: 1px solid #DDE1E7;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 28px 24px;
+      min-height: 600px;
+    }
+
+    /* ── Hero Banner ───────────────────────────────────────────────────── */
+    .vlc-hero {
+      background: linear-gradient(135deg, #1B2A4A 0%, #15405E 55%, #0E7C7B 100%);
+      border-radius: 10px;
+      padding: 46px 40px 36px;
+      color: white;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .vlc-hero::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 300px; height: 300px;
+      background: rgba(230, 168, 23, 0.07);
+      border-radius: 50%;
+    }
+    .vlc-hero-badge {
+      display: inline-block;
+      background: rgba(230, 168, 23, 0.18);
+      border: 1px solid rgba(230, 168, 23, 0.45);
+      color: #E6A817;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 14px;
+    }
+    .vlc-hero-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #E6A817;
+      margin: 0 0 6px;
+      line-height: 1.2;
+    }
+    .vlc-hero-sub {
+      font-size: 15px;
+      color: #CBD5E0;
+      margin: 0 0 28px;
+    }
+    .vlc-stat-pill {
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    .vlc-stat-num {
+      font-size: 30px;
+      font-weight: 800;
+      color: #E6A817;
+      line-height: 1;
+      display: block;
+    }
+    .vlc-stat-lbl {
+      font-size: 10px;
+      color: #A0AEC0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 5px;
+    }
+
+    /* ── Info Cards ────────────────────────────────────────────────────── */
+    .vlc-info-card {
+      background: white;
+      border-radius: 10px;
+      padding: 22px 20px;
+      height: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border-top: 4px solid;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .vlc-info-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.11);
+    }
+    .vlc-info-card .card-icon {
+      font-size: 26px;
+      margin-bottom: 10px;
+    }
+    .vlc-info-card h5 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 10px;
+    }
+    .vlc-info-card p {
+      font-size: 12.5px;
+      color: #4A5568;
+      line-height: 1.75;
+      margin: 0;
+    }
+
+    /* ── Values Journey Strip ──────────────────────────────────────────── */
+    .vlc-values-strip {
+      background: white;
+      border-radius: 10px;
+      padding: 22px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-top: 20px;
+    }
+    .vlc-values-strip .strip-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1B2A4A;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-bottom: 14px;
+    }
+    .vlc-value-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 20px;
+      padding: 5px 13px;
+      font-size: 11.5px;
+      font-weight: 600;
+      white-space: nowrap;
+      margin: 3px;
+    }
+    .vlc-meta-chip {
+      background: #F4F6F9;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 11.5px;
+      color: #4A5568;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* ── Section Headers ───────────────────────────────────────────────── */
+    .vlc-section-hdr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 6px 0 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #E6A817;
+    }
+    .vlc-section-hdr .hdr-icon {
+      background: #E6A817;
+      color: white;
+      border-radius: 7px;
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .vlc-section-hdr h4 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1B2A4A;
+    }
+    .vlc-section-hdr .hdr-sub {
+      margin: 1px 0 0;
+      font-size: 11px;
+      color: #718096;
+    }
+
+    /* ── Narrative Card ────────────────────────────────────────────────── */
+    .vlc-narrative-card {
+      background: white;
+      border-radius: 10px;
+      padding: 24px 26px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border-left: 5px solid #E6A817;
+      margin-bottom: 18px;
+    }
+    .vlc-narrative-card .narr-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      color: #E6A817;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      margin-bottom: 12px;
+    }
+    .vlc-narrative-card .narr-body {
+      font-size: 13.5px;
+      line-height: 1.9;
+      color: #2C3E50;
+    }
+
+    /* ── Signal Cards ──────────────────────────────────────────────────── */
+    .vlc-signal-card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 14px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border-top: 4px solid;
+      height: 100%;
+    }
+    .vlc-signal-card .sig-label {
+      font-size: 10px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 7px;
+    }
+
+    /* ── Chart Cards ───────────────────────────────────────────────────── */
+    .vlc-chart-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      height: 100%;
+    }
+    .vlc-chart-card .chart-ttl {
+      font-size: 13px;
+      font-weight: 700;
+      color: #1B2A4A;
+      margin-bottom: 2px;
+    }
+    .vlc-chart-card .chart-sub {
+      font-size: 11px;
+      color: #718096;
+      margin-bottom: 14px;
+    }
+    .vlc-chart-note {
+      font-size: 11px;
+      color: #718096;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #EDF2F7;
+    }
+
+    /* ── Equity Pills ──────────────────────────────────────────────────── */
+    .vlc-eq-tabs .nav-pills { margin-bottom: 16px; }
+    .vlc-eq-tabs .nav-pills > li > a {
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #2C3E50;
+      padding: 6px 16px;
+    }
+    .vlc-eq-tabs .nav-pills > li.active > a,
+    .vlc-eq-tabs .nav-pills > li.active > a:hover,
+    .vlc-eq-tabs .nav-pills > li.active > a:focus {
+      background-color: #E6A817 !important;
+      color: white !important;
+    }
+
+    /* ── Quadrant Legend ───────────────────────────────────────────────── */
+    .vlc-qlgnd {
+      background: #F7FAFC;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 10px;
+    }
+    .vlc-qlgnd-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 7px;
+      font-size: 11.5px;
+      color: #4A5568;
+    }
+    .vlc-qlgnd-dot {
+      width: 12px; height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* ── Insight Box ───────────────────────────────────────────────────── */
+    .vlc-insight {
+      background: #FFF8E1;
+      border-left: 4px solid #E6A817;
+      border-radius: 4px 8px 8px 4px;
+      padding: 13px 15px;
+      font-size: 12px;
+      color: #4A5568;
+      line-height: 1.65;
+    }
+
+    /* ── Priority card accent ──────────────────────────────────────────── */
+    .vlc-priority-card {
+      border-top: 4px solid #E74C3C !important;
+    }
+    .vlc-priority-card .chart-ttl { color: #E74C3C !important; }
+
+    /* ── Spacing helpers ───────────────────────────────────────────────── */
+    .vlc-gap { margin-bottom: 20px; }
+    .vlc-gap-sm { margin-bottom: 12px; }
+    .vlc-filter-row .box-header { background: #1B2A4A !important; }
+
+  ")),
+
+  # ── Filters Row ────────────────────────────────────────────────────────────
   fluidRow(
     box(
       width = 12,
       solidHeader = TRUE,
       status = "warning",
       collapsible = TRUE,
-      title = icon("filter", "fa") %>% tagAppendChildren(" Filters"),
-      
+      title = tagList(icon("sliders-h"), " Filters"),
+
       column(3,
         selectInput("vlc_filter_term", "Academic Term:",
                     choices = c("All Terms" = "all", "Term 1" = "1", "Term 2" = "2"),
@@ -266,506 +604,613 @@ vlc_ui <- tabItem(
     )
   ),
   
-  # --------------------------------------------------------------------------
-  # SECTION 1 — ABOUT VLC (Landing / Explainer Panel)
-  # --------------------------------------------------------------------------
+  # ── Main 4-Tab Layout ──────────────────────────────────────────────────────
   fluidRow(
-    box(
-      width = 12,
-      status = "warning",
-      solidHeader = FALSE,
-      
-      div(
-        style = "background: linear-gradient(135deg, #2C3E50 0%, #1a252f 100%);
-                 border-radius: 8px; padding: 30px; color: white; margin-bottom: 5px;",
-        
-        # Header
-        fluidRow(
-          column(8,
-            h2(
-              icon("book-open"),
-              " Essential Values for Ghanaian Youth",
-              style = "color: #E6A817; font-weight: bold; margin-top: 0;"
-            ),
-            h4("Values Learning Community (VLC) — National Monitoring Dashboard",
-               style = "color: #BDC3C7; margin-top: 5px;")
-          ),
-          column(4,
-            div(
-              style = "text-align: right; padding-top: 10px;",
-              tags$img(
-                src = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Flag_of_Ghana.svg/200px-Flag_of_Ghana.svg.png",
-                height = "50px", style = "margin-right: 10px;"
-              ),
-              tags$span(
-                "GES | NaCCA | T-TEL | NUGS",
-                style = "color: #E6A817; font-size: 12px; display: block; margin-top: 5px;"
-              )
-            )
-          )
-        ),
-        
-        hr(style = "border-color: #E6A817; margin: 15px 0;"),
-        
-        # What is the VLC — three columns
-        fluidRow(
-          
-          column(4,
-            div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #E6A817;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("question-circle"), " What is the VLC?",
-                 style = "color: #E6A817; font-weight: bold;"),
-              p(
-                "The ", tags$strong(style = "color:#E6A817;", "Values Learning Community (VLC)"),
-                " is a weekly, student-led session held in every Senior High School across Ghana. 
-                While teachers attend their ", tags$em("Professional Learning Community (PLC)"),
-                " sessions, learners engage in structured peer-facilitated discussions guided by 
-                the Essential Values Handbook. Each 90-minute session is led by two trained 
-                ", tags$strong("Peer Guides"), " — classmates selected for their integrity and 
-                communication skills.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
-            )
-          ),
-          
-          column(4,
-            div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #27AE60;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("book"), " The Handbook",
-                 style = "color: #27AE60; font-weight: bold;"),
-              p(
-                "Published by the ", tags$strong("Ministry of Education Ghana"),
-                " in partnership with GES, NaCCA, T-TEL, NUGS, Lead for Ghana, and Honour Ghana,
-                the handbook was ", tags$em("written by young people for young people"),
-                ". It covers ", tags$strong("11 core values"), " across ",
-                tags$strong("22 sessions"), " spanning the full academic year — 
-                from ", tags$em("Responsible Citizenship"), " and ", tags$em("Integrity"),
-                " to ", tags$em("Leadership"), " and ", tags$em("Building Confidence"),
-                ". Each value is taught in an Understanding session, 
-                then practised in an Applying session.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
-            )
-          ),
-          
-          column(4,
-            div(
-              style = "background: rgba(255,255,255,0.05); border-left: 4px solid #2980B9;
-                       border-radius: 4px; padding: 15px; height: 100%;",
-              h5(icon("bullseye"), " Why It Matters",
-                 style = "color: #2980B9; font-weight: bold;"),
-              p(
-                "The VLC addresses Ghana's national commitment to holistic education — 
-                developing not just academic knowledge ", tags$em("(The Head)"),
-                ", but also values and character ", tags$em("(The Heart)"),
-                " and practical skills ", tags$em("(The Hand)"),
-                ". GES Director-General Prof. Ernest Kofi Davis notes that 
-                character formation ", tags$em('"enhances academic achievement"'),
-                ". This dashboard monitors whether Ghana's 721 SHS are reaching their 
-                students with this transformative programme every week.",
-                style = "font-size: 13px; color: #ECF0F1; line-height: 1.6;"
-              )
-            )
-          )
-        ),
-        
-        # Values journey strip
-        div(
-          style = "margin-top: 20px;",
-          h5(icon("road"), " The 11-Value Journey (22 Sessions)",
-             style = "color: #E6A817; font-weight: bold; margin-bottom: 10px;"),
-          
-          div(
-            style = "display: flex; flex-wrap: wrap; gap: 8px;",
-            
-            lapply(
-              list(
-                list("Responsible Citizenship", "#E74C3C"),
-                list("Honesty", "#E67E22"),
-                list("Integrity", "#F39C12"),
-                list("Diversity", "#27AE60"),
-                list("Equity", "#16A085"),
-                list("Discipline", "#2980B9"),
-                list("Self-Directed Learning", "#8E44AD"),
-                list("Adaptability", "#D35400"),
-                list("Resourcefulness", "#1ABC9C"),
-                list("Leadership", "#BDC3C7"),
-                list("Building Confidence", "#C0392B")
-              ),
-              function(v) {
-                div(
-                  style = glue(
-                    "background: {v[[2]]}22; border: 1px solid {v[[2]]};
-                     border-radius: 20px; padding: 4px 12px; font-size: 11px;
-                     color: white; white-space: nowrap;"
-                  ),
-                  icon("circle", style = glue("color: {v[[2]]}; font-size: 8px;")),
-                  " ", v[[1]]
-                )
-              }
-            )
-          )
-        )
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 2 — NARRATIVE STORY HEADER (Dynamic Data Story)
-  # --------------------------------------------------------------------------
-  fluidRow(
-    box(
-      width = 12,
-      status = "warning",
-      solidHeader = TRUE,
-      title = tagList(icon("rss"), " Ghana's Values Formation Pulse — Live Data Story"),
-      
-      div(
-        style = "background: #FDF6E3; border-radius: 6px; padding: 20px;",
-        
-        # Main narrative paragraph
-        div(
-          style = "font-size: 15px; line-height: 1.9; color: #2C3E50; 
-                   border-left: 5px solid #E6A817; padding-left: 15px;",
-          uiOutput("vlc_narrative_text")
-        ),
-        
-        hr(),
-        
-        # Three signal cards below the narrative
-        fluidRow(
-          
-          column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #27AE60; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
-              uiOutput("vlc_signal_coverage"),
-              p("National School Coverage",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
-            )
-          ),
-          
-          column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #2980B9; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
-              uiOutput("vlc_signal_learners"),
-              p("Cumulative Learner Touchpoints",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
-            )
-          ),
-          
-          column(4,
-            div(
-              style = "background: white; border-radius: 6px; padding: 15px;
-                       border-top: 3px solid #E74C3C; text-align: center;
-                       box-shadow: 0 1px 4px rgba(0,0,0,0.1);",
-              uiOutput("vlc_signal_attention"),
-              p("Schools Requiring Follow-up",
-                style = "color: #7F8C8D; font-size: 12px; margin: 0;")
-            )
-          )
-        )
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 3 — KEY PERFORMANCE INDICATORS
-  # --------------------------------------------------------------------------
-  fluidRow(
-    valueBoxOutput("vlc_kpi_submissions",    width = 2),
-    valueBoxOutput("vlc_kpi_schools_held",   width = 2),
-    valueBoxOutput("vlc_kpi_students",       width = 2),
-    valueBoxOutput("vlc_kpi_participation",  width = 2),
-    valueBoxOutput("vlc_kpi_headteacher",    width = 2),
-    valueBoxOutput("vlc_kpi_disability",     width = 2)
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 4 — PROGRESS & MOMENTUM
-  # --------------------------------------------------------------------------
-  fluidRow(
-    
-    # Session delivery trend
-    box(
-      width = 8,
-      title = tagList(icon("chart-line"), " Weekly VLC Session Submissions — Programme Momentum"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_weekly_trend", height = "280px"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 5px; padding-left: 10px;",
-        icon("info-circle"),
-        " Each bar represents total session submissions per week. 
-          A declining trend signals implementation fatigue and requires regional follow-up."
-      )
-    ),
-    
-    # Participation funnel
-    box(
-      width = 4,
-      title = tagList(icon("filter"), " Implementation Funnel"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_funnel", height = "280px"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 5px; padding-left: 10px;",
-        icon("info-circle"),
-        " Drop between 'Submitted' and 'VLC Held' indicates data without sessions."
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 5 — SESSION CONTENT ANALYSIS
-  # --------------------------------------------------------------------------
-  fluidRow(
-    
-    # Session delivery frequency
-    box(
-      width = 6,
-      title = tagList(icon("book-open"), " Session Coverage — Which Values Are Being Taught?"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_session_coverage", height = "350px"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 5px; padding-left: 10px;",
-        icon("info-circle"),
-        " Low delivery of later sessions (Leadership, Confidence) signals schools are 
-          not progressing through the full values curriculum."
-      )
-    ),
-    
-    # Value theme heatmap
-    box(
-      width = 6,
-      title = tagList(icon("th"), " Value Theme Delivery by Region"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_theme_region_heatmap", height = "350px"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 5px; padding-left: 10px;",
-        icon("info-circle"),
-        " Dark cells = more sessions on that value theme delivered in that region."
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 6 — EQUITY & INCLUSION
-  # --------------------------------------------------------------------------
-  fluidRow(
-    box(
-      width = 12,
-      status = "warning", solidHeader = TRUE,
-      collapsible = TRUE,
-      title = tagList(icon("balance-scale"), " Equity & Inclusion Dashboard"),
-      
-      # Sub-panel tabs
+    column(12,
       tabsetPanel(
+        id = "vlc_main_tabs",
         type = "tabs",
-        
-        # Gender tab
+
+        # ════════════════════════════════════════════════════════════════════
+        # TAB 1 — INTRODUCTION
+        # ════════════════════════════════════════════════════════════════════
         tabPanel(
-          title = tagList(icon("venus-mars"), " Gender Balance"),
-          br(),
+          title = tagList(icon("info-circle"), " Introduction"),
+
+          # Hero Banner
+          div(
+            class = "vlc-hero",
+            div(class = "vlc-hero-badge", "GES | NaCCA | T-TEL | NUGS"),
+            h1(class = "vlc-hero-title",
+               icon("book-open"), " Essential Values for Ghanaian Youth"),
+            p(class = "vlc-hero-sub",
+              "Values Learning Community (VLC) — National Monitoring Dashboard"),
+            hr(style = "border-color: rgba(230,168,23,0.3); margin: 22px 0;"),
+            fluidRow(
+              column(3,
+                div(class = "vlc-stat-pill",
+                  tags$span(class = "vlc-stat-num", "721"),
+                  div(class = "vlc-stat-lbl", "Senior High Schools")
+                )
+              ),
+              column(3,
+                div(class = "vlc-stat-pill",
+                  tags$span(class = "vlc-stat-num", "11"),
+                  div(class = "vlc-stat-lbl", "Core Values")
+                )
+              ),
+              column(3,
+                div(class = "vlc-stat-pill",
+                  tags$span(class = "vlc-stat-num", "22"),
+                  div(class = "vlc-stat-lbl", "Sessions Per Year")
+                )
+              ),
+              column(3,
+                div(class = "vlc-stat-pill",
+                  tags$span(class = "vlc-stat-num", "16"),
+                  div(class = "vlc-stat-lbl", "Regions")
+                )
+              )
+            )
+          ),
+
+          # Three info cards
           fluidRow(
-            column(8, plotlyOutput("vlc_gender_region", height = "300px")),
             column(4,
-              div(
-                style = "background: #F8F9FA; border-radius: 6px; padding: 15px; margin-top: 10px;",
-                h5("Reading the Gender Gap", style = "color: #2C3E50; font-weight: bold;"),
-                p("Bars to the ", tags$strong(style = "color: #E74C3C;", "right"),
-                  " indicate female-dominant attendance.", br(),
-                  "Bars to the ", tags$strong(style = "color: #2980B9;", "left"),
-                  " indicate male-dominant attendance.", br(), br(),
-                  "The national equity target is a gender gap of ±10 percentage points.
-                   Regions outside this band require targeted gender-responsive 
-                   implementation support.",
-                  style = "font-size: 12px; color: #555;"),
-                br(),
-                uiOutput("vlc_gender_summary_text")
+              div(class = "vlc-info-card", style = "border-top-color: #E6A817;",
+                div(class = "card-icon", style = "color: #E6A817;",
+                    icon("users")),
+                h5(style = "color: #E6A817;", "What is the VLC?"),
+                p("The ", tags$strong("Values Learning Community (VLC)"),
+                  " is a weekly, student-led session held in every Senior High School
+                   across Ghana. While teachers attend their Professional Learning
+                   Community (PLC) meetings, learners engage in peer-facilitated
+                   discussions guided by the Essential Values Handbook. Each
+                   90-minute session is facilitated by two trained ",
+                  tags$strong("Peer Guides"), " — classmates selected for their
+                   integrity and communication skills.")
+              )
+            ),
+            column(4,
+              div(class = "vlc-info-card", style = "border-top-color: #27AE60;",
+                div(class = "card-icon", style = "color: #27AE60;",
+                    icon("book")),
+                h5(style = "color: #27AE60;", "The Handbook"),
+                p("Published by the ", tags$strong("Ministry of Education Ghana"),
+                  " in partnership with GES, NaCCA, T-TEL, NUGS, Lead for Ghana,
+                   and Honour Ghana — and ", tags$em("written by young people for
+                   young people"), ". It covers ", tags$strong("11 core values"),
+                  " across ", tags$strong("22 sessions"), " spanning the full
+                   academic year. Each value is explored in an Understanding
+                   session, then reinforced in an Applying session.")
+              )
+            ),
+            column(4,
+              div(class = "vlc-info-card", style = "border-top-color: #2980B9;",
+                div(class = "card-icon", style = "color: #2980B9;",
+                    icon("bullseye")),
+                h5(style = "color: #2980B9;", "Why It Matters"),
+                p("The VLC addresses Ghana's commitment to holistic education —
+                   developing ", tags$em("The Head"), " (knowledge), ",
+                  tags$em("The Heart"), " (values and character), and ",
+                  tags$em("The Hand"), " (practical skills). This dashboard
+                   tracks whether all 721 SHS are delivering the programme
+                   each week — and identifies where support is needed most.")
               )
             )
-          )
-        ),
-        
-        # Disability inclusion tab
-        tabPanel(
-          title = tagList(icon("wheelchair"), " Learner Disability Inclusion"),
-          br(),
-          fluidRow(
-            column(5, plotlyOutput("vlc_disability_regions", height = "300px")),
-            column(4, plotlyOutput("vlc_disability_types", height = "300px")),
-            column(3,
-              div(
-                style = "background: #F8F9FA; border-radius: 6px; padding: 15px; margin-top: 10px;",
-                h5("Why This Matters", style = "color: #2C3E50; font-weight: bold;"),
-                p(
-                  "The handbook's Sessions 7-10 explicitly address Diversity and Equity — 
-                   making disability inclusion in VLC sessions a direct measure of 
-                   values-in-action. Schools that include learners with disabilities 
-                   in VLC are demonstrating the very values being taught.",
-                  style = "font-size: 12px; color: #555; line-height: 1.6;"
+          ),
+
+          # Values journey strip
+          div(
+            class = "vlc-values-strip",
+            div(class = "strip-title",
+                icon("road"), " The 11-Value Journey — 22 Sessions Across the Year"),
+            div(
+              style = "display: flex; flex-wrap: wrap; align-items: center;",
+              lapply(
+                list(
+                  list("Responsible Citizenship", "#E74C3C"),
+                  list("Honesty",                 "#E67E22"),
+                  list("Integrity",               "#F39C12"),
+                  list("Diversity",               "#27AE60"),
+                  list("Equity",                  "#16A085"),
+                  list("Discipline",              "#2980B9"),
+                  list("Self-Directed Learning",  "#8E44AD"),
+                  list("Adaptability",            "#D35400"),
+                  list("Resourcefulness",         "#1ABC9C"),
+                  list("Leadership",              "#2C3E50"),
+                  list("Building Confidence",     "#C0392B")
                 ),
-                hr(),
-                uiOutput("vlc_disability_summary")
+                function(v) {
+                  div(
+                    class = "vlc-value-badge",
+                    style = glue(
+                      "background: {v[[2]]}18; border: 1.5px solid {v[[2]]}55;
+                       color: {v[[2]]};"
+                    ),
+                    tags$span(style = glue("color: {v[[2]]};"), "\u25cf"),
+                    tags$span(v[[1]])
+                  )
+                }
               )
-            )
-          )
-        ),
-        
-        # Leadership presence tab
-        tabPanel(
-          title = tagList(icon("user-tie"), " School Leadership Engagement"),
-          br(),
-          fluidRow(
-            column(7, plotlyOutput("vlc_leadership_chart", height = "300px")),
-            column(5,
+            ),
+            div(
+              style = "margin-top: 16px; padding-top: 14px;
+                       border-top: 1px solid #EDF2F7;",
               fluidRow(
-                column(6,
-                  div(
-                    style = "background: #F8F9FA; border-radius: 6px; padding: 12px; margin: 5px;
-                             text-align: center;",
-                    uiOutput("vlc_ht_presence_rate"),
-                    p("Headteacher Present", style = "font-size: 11px; color: #7F8C8D; margin: 0;")
+                column(4,
+                  div(class = "vlc-meta-chip",
+                    icon("lightbulb", style = "color: #E6A817;"),
+                    "S0 = Orientation. S1\u2013S22 = Understanding & Applying pairs."
                   )
                 ),
-                column(6,
-                  div(
-                    style = "background: #F8F9FA; border-radius: 6px; padding: 12px; margin: 5px;
-                             text-align: center;",
-                    uiOutput("vlc_gcc_presence_rate"),
-                    p("G&C Officer Present", style = "font-size: 11px; color: #7F8C8D; margin: 0;")
+                column(4,
+                  div(class = "vlc-meta-chip",
+                    icon("clock", style = "color: #2980B9;"),
+                    "Each session lasts approximately 90 minutes."
                   )
+                ),
+                column(4,
+                  div(class = "vlc-meta-chip",
+                    icon("calendar-alt", style = "color: #27AE60;"),
+                    "Sessions run weekly throughout both academic terms."
+                  )
+                )
+              )
+            )
+          )
+        ), # end Tab 1
+
+        # ════════════════════════════════════════════════════════════════════
+        # TAB 2 — NATIONAL SUMMARY
+        # ════════════════════════════════════════════════════════════════════
+        tabPanel(
+          title = tagList(icon("chart-bar"), " National Summary"),
+
+          # Section A: Live Data Story
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("rss")),
+            div(
+              h4("Ghana's Values Formation Pulse"),
+              p(class = "hdr-sub", "Live programme data — national overview")
+            )
+          ),
+
+          div(
+            class = "vlc-narrative-card",
+            div(class = "narr-eyebrow",
+                icon("align-left"), " Live Data Story"),
+            div(class = "narr-body",
+                uiOutput("vlc_narrative_text"))
+          ),
+
+          fluidRow(
+            column(4,
+              div(class = "vlc-signal-card", style = "border-top-color: #27AE60;",
+                uiOutput("vlc_signal_coverage"),
+                div(class = "sig-label", "National School Coverage")
+              )
+            ),
+            column(4,
+              div(class = "vlc-signal-card", style = "border-top-color: #2980B9;",
+                uiOutput("vlc_signal_learners"),
+                div(class = "sig-label", "Cumulative Learner Touchpoints")
+              )
+            ),
+            column(4,
+              div(class = "vlc-signal-card", style = "border-top-color: #E74C3C;",
+                uiOutput("vlc_signal_attention"),
+                div(class = "sig-label", "Schools Requiring Follow-up")
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section B: KPIs
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("tachometer-alt")),
+            div(
+              h4("Key Performance Indicators"),
+              p(class = "hdr-sub", "Core metrics for the current filtered view")
+            )
+          ),
+
+          fluidRow(
+            valueBoxOutput("vlc_kpi_submissions",   width = 2),
+            valueBoxOutput("vlc_kpi_schools_held",  width = 2),
+            valueBoxOutput("vlc_kpi_students",      width = 2),
+            valueBoxOutput("vlc_kpi_participation", width = 2),
+            valueBoxOutput("vlc_kpi_headteacher",   width = 2),
+            valueBoxOutput("vlc_kpi_disability",    width = 2)
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section C: Progress & Momentum
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("chart-line")),
+            div(
+              h4("Progress & Momentum"),
+              p(class = "hdr-sub",
+                "Weekly submission trends and implementation pipeline")
+            )
+          ),
+
+          fluidRow(
+            column(8,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Weekly VLC Session Submissions"),
+                div(class = "chart-sub",
+                    "Programme momentum — sessions submitted by week of term"),
+                plotlyOutput("vlc_weekly_trend", height = "265px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " A declining trend signals implementation fatigue and requires
+                    regional follow-up."
+                )
+              )
+            ),
+            column(4,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Implementation Funnel"),
+                div(class = "chart-sub",
+                    "From all schools to high-attendance sessions"),
+                plotlyOutput("vlc_funnel", height = "265px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Drop between Submitted and VLC Held indicates reporting
+                    without delivery."
+                )
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section D: Session Content
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("book-open")),
+            div(
+              h4("Session Content Analysis"),
+              p(class = "hdr-sub",
+                "Which values are being taught, and where across the country")
+            )
+          ),
+
+          fluidRow(
+            column(6,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Session Coverage"),
+                div(class = "chart-sub",
+                    "Most frequently delivered sessions nationally"),
+                plotlyOutput("vlc_session_coverage", height = "340px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Low delivery of later sessions signals schools are not
+                    progressing through the full values curriculum."
+                )
+              )
+            ),
+            column(6,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Value Theme Delivery by Region"),
+                div(class = "chart-sub",
+                    "Heatmap: session volume per value theme and region"),
+                plotlyOutput("vlc_theme_region_heatmap", height = "340px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Darker cells = more sessions on that value theme delivered
+                    in that region."
+                )
+              )
+            )
+          )
+        ), # end Tab 2
+
+        # ════════════════════════════════════════════════════════════════════
+        # TAB 3 — REGIONAL INSIGHTS
+        # ════════════════════════════════════════════════════════════════════
+        tabPanel(
+          title = tagList(icon("map-marked-alt"), " Regional Insights"),
+
+          # Section A: Regional performance
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("map")),
+            div(
+              h4("Regional Performance Overview"),
+              p(class = "hdr-sub",
+                "Comparing session delivery and outcomes across all 16 regions")
+            )
+          ),
+
+          fluidRow(
+            column(8,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Sessions Held by Region"),
+                div(class = "chart-sub",
+                    "Bars coloured by average participation rate (red \u2192 green)"),
+                plotlyOutput("vlc_regional_bar", height = "355px")
+              )
+            ),
+            column(4,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Regional Rankings"),
+                div(class = "chart-sub",
+                    "Composite score: coverage, attendance, leadership & inclusion"),
+                DT::dataTableOutput("vlc_regional_table"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Score = equal weighting of coverage, participation,
+                    headteacher presence, and gender balance."
+                )
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section B: Equity & Inclusion
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("balance-scale")),
+            div(
+              h4("Equity & Inclusion"),
+              p(class = "hdr-sub",
+                "Gender balance, disability inclusion, and leadership engagement
+                 by region")
+            )
+          ),
+
+          div(
+            class = "vlc-chart-card vlc-eq-tabs",
+            tabsetPanel(
+              type = "pills",
+              id   = "vlc_equity_tabs",
+
+              # Gender tab
+              tabPanel(
+                title = tagList(icon("venus-mars"), " Gender Balance"),
+                br(),
+                fluidRow(
+                  column(8,
+                    plotlyOutput("vlc_gender_region", height = "310px")
+                  ),
+                  column(4,
+                    div(
+                      style = "background: #F7FAFC; border-radius: 8px; padding: 18px;",
+                      h5(style = "color: #1B2A4A; font-weight: 700; font-size: 13px;",
+                         "Reading the Gender Gap"),
+                      p(style = "font-size: 12px; color: #4A5568; line-height: 1.75;",
+                        "Bars to the ",
+                        tags$strong(style = "color: #E74C3C;", "right"),
+                        " indicate female-dominant attendance.", br(),
+                        "Bars to the ",
+                        tags$strong(style = "color: #2980B9;", "left"),
+                        " indicate male-dominant attendance.", br(), br(),
+                        "The national equity target is a gender gap of \u00b110
+                         percentage points. Regions outside this band require
+                         targeted support."
+                      ),
+                      hr(style = "margin: 12px 0;"),
+                      uiOutput("vlc_gender_summary_text")
+                    )
+                  )
+                )
+              ),
+
+              # Disability tab
+              tabPanel(
+                title = tagList(icon("wheelchair"), " Disability Inclusion"),
+                br(),
+                fluidRow(
+                  column(5,
+                    plotlyOutput("vlc_disability_regions", height = "310px")
+                  ),
+                  column(4,
+                    plotlyOutput("vlc_disability_types", height = "310px")
+                  ),
+                  column(3,
+                    div(
+                      style = "background: #F7FAFC; border-radius: 8px; padding: 18px;",
+                      h5(style = "color: #1B2A4A; font-weight: 700; font-size: 13px;",
+                         "Why This Matters"),
+                      p(style = "font-size: 12px; color: #4A5568; line-height: 1.75;",
+                        "Sessions 7\u201310 explicitly address Diversity and Equity,
+                         making disability inclusion a direct measure of values-in-action.
+                         Schools that include learners with disabilities are demonstrating
+                         the very values being taught."
+                      ),
+                      hr(style = "margin: 12px 0;"),
+                      uiOutput("vlc_disability_summary")
+                    )
+                  )
+                )
+              ),
+
+              # Leadership tab
+              tabPanel(
+                title = tagList(icon("user-tie"), " Leadership Engagement"),
+                br(),
+                fluidRow(
+                  column(7,
+                    plotlyOutput("vlc_leadership_chart", height = "310px")
+                  ),
+                  column(5,
+                    fluidRow(
+                      column(6,
+                        div(
+                          style = "background: #F7FAFC; border-radius: 8px;
+                                   padding: 14px; text-align: center; margin-bottom: 10px;",
+                          uiOutput("vlc_ht_presence_rate"),
+                          p(style = "font-size: 11px; color: #718096; margin: 0;",
+                            "Headteacher Present")
+                        )
+                      ),
+                      column(6,
+                        div(
+                          style = "background: #F7FAFC; border-radius: 8px;
+                                   padding: 14px; text-align: center; margin-bottom: 10px;",
+                          uiOutput("vlc_gcc_presence_rate"),
+                          p(style = "font-size: 11px; color: #718096; margin: 0;",
+                            "G&C Officer Present")
+                        )
+                      )
+                    ),
+                    div(
+                      class = "vlc-insight",
+                      icon("lightbulb", style = "color: #E6A817;"),
+                      " ", tags$strong("Research insight:"),
+                      " Schools where the headteacher consistently attends VLC
+                        sessions show 23% higher programme continuity in comparable
+                        school improvement programmes (T-TEL internal evidence, 2023)."
+                    )
+                  )
+                )
+              )
+            ) # end equity tabsetPanel
+          )
+        ), # end Tab 3
+
+        # ════════════════════════════════════════════════════════════════════
+        # TAB 4 — SCHOOL-LEVEL ANALYSIS
+        # ════════════════════════════════════════════════════════════════════
+        tabPanel(
+          title = tagList(icon("school"), " School-Level Analysis"),
+
+          # Section A: Quadrant
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("th-large")),
+            div(
+              h4("School Action Quadrant"),
+              p(class = "hdr-sub",
+                "Segmenting all schools by delivery frequency and participation quality")
+            )
+          ),
+
+          fluidRow(
+            column(8,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl",
+                    "Who Needs What Support?"),
+                div(class = "chart-sub",
+                    "X = Participation Rate | Y = Sessions Completed |
+                     Bubble size = Headteacher presence"),
+                plotlyOutput("vlc_school_quadrant", height = "370px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Hover over any point for school details.
+                    Bottom-left quadrant = priority for intervention."
+                ),
+                div(
+                  class = "vlc-qlgnd",
+                  fluidRow(
+                    column(6,
+                      div(class = "vlc-qlgnd-item",
+                        div(class = "vlc-qlgnd-dot",
+                            style = "background: #27AE60;"),
+                        tags$strong("Exemplar:"), " \u22653 sessions & \u226575% attendance"
+                      ),
+                      div(class = "vlc-qlgnd-item",
+                        div(class = "vlc-qlgnd-dot",
+                            style = "background: #E67E22;"),
+                        tags$strong("Quality Concern:"), " \u22653 sessions, low attendance"
+                      )
+                    ),
+                    column(6,
+                      div(class = "vlc-qlgnd-item",
+                        div(class = "vlc-qlgnd-dot",
+                            style = "background: #2980B9;"),
+                        tags$strong("Access Barrier:"), " Few sessions, high attendance"
+                      ),
+                      div(class = "vlc-qlgnd-item",
+                        div(class = "vlc-qlgnd-dot",
+                            style = "background: #E74C3C;"),
+                        tags$strong("Priority Intervention:"), " Low delivery & attendance"
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+            column(4,
+              div(class = "vlc-chart-card vlc-priority-card",
+                div(class = "chart-ttl",
+                    icon("exclamation-triangle"), " Priority Follow-Up Schools"),
+                div(class = "chart-sub",
+                    "Schools with low coverage AND low participation"),
+                DT::dataTableOutput("vlc_priority_schools")
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section B: School Profile
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("search")),
+            div(
+              h4("School Profile — Deep Dive"),
+              p(class = "hdr-sub",
+                "Select any school to view its attendance and gender trend over time")
+            )
+          ),
+
+          div(
+            class = "vlc-chart-card",
+            fluidRow(
+              column(5,
+                selectInput("vlc_school_search", "Select a School:",
+                            choices  = c("Select a school..." = ""),
+                            width    = "100%")
+              ),
+              column(7,
+                div(style = "padding-top: 6px;",
+                    uiOutput("vlc_school_narrative"))
+              )
+            ),
+            br(),
+            fluidRow(
+              column(6,
+                div(class = "chart-ttl", "Attendance Trend Over Time"),
+                div(class = "chart-sub vlc-gap-sm",
+                    "Participation rate per session — dots coloured by tier"),
+                plotlyOutput("vlc_school_timeline", height = "220px")
+              ),
+              column(6,
+                div(class = "chart-ttl", "Gender Participation by Session"),
+                div(class = "chart-sub vlc-gap-sm",
+                    "Male and female attendance stacked by session date"),
+                plotlyOutput("vlc_school_gender_trend", height = "220px")
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section C: Raw Data (collapsible box)
+          fluidRow(
+            box(
+              width = 12,
+              title = tagList(icon("table"), " Submission Records"),
+              status = "warning", solidHeader = TRUE,
+              collapsible = TRUE, collapsed = TRUE,
+              fluidRow(
+                column(3,
+                  downloadButton("vlc_download_data", "Download Filtered Data",
+                                 class = "btn-warning btn-sm")
                 )
               ),
               br(),
-              div(
-                style = "background: #FFF8E1; border-left: 4px solid #E6A817;
-                         padding: 12px; border-radius: 4px; margin: 5px;",
-                p(
-                  icon("lightbulb", style = "color: #E6A817;"),
-                  " ", tags$strong("Research insight:"),
-                  " Schools where the headteacher consistently attends VLC sessions 
-                    show 23% higher programme continuity in comparable school improvement 
-                    programmes (T-TEL internal evidence, 2023).",
-                  style = "font-size: 12px; color: #555; margin: 0; line-height: 1.6;"
-                )
-              )
+              DT::dataTableOutput("vlc_raw_table")
             )
           )
-        )
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 7 — REGIONAL PERFORMANCE
-  # --------------------------------------------------------------------------
-  fluidRow(
-    
-    box(
-      width = 8,
-      title = tagList(icon("map"), " Regional Performance Overview"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_regional_bar", height = "350px")
-    ),
-    
-    box(
-      width = 4,
-      title = tagList(icon("ranking-star"), " Regional Rankings"),
-      status = "warning", solidHeader = TRUE,
-      DT::dataTableOutput("vlc_regional_table"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 8px;",
-        icon("info-circle"),
-        " Score = composite of coverage rate, participation rate, 
-          headteacher presence, and gender balance."
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 8 — SCHOOL QUADRANT (Action Segmentation)
-  # --------------------------------------------------------------------------
-  fluidRow(
-    box(
-      width = 8,
-      title = tagList(icon("th-large"),
-                      " School Action Quadrant — Who Needs What Support?"),
-      status = "warning", solidHeader = TRUE,
-      plotlyOutput("vlc_school_quadrant", height = "380px"),
-      div(
-        style = "font-size: 11px; color: #7F8C8D; margin-top: 5px; padding-left: 10px;",
-        icon("info-circle"),
-        " X = Participation Rate | Y = Sessions Completed. 
-          Hover over points for school details. 
-          Schools in the bottom-left quadrant are priority for intervention."
-      )
-    ),
-    
-    box(
-      width = 4,
-      title = tagList(icon("exclamation-triangle"), " Priority Follow-Up Schools"),
-      status = "danger", solidHeader = TRUE,
-      p("Schools with low coverage AND low participation requiring immediate contact:",
-        style = "font-size: 12px; color: #555;"),
-      DT::dataTableOutput("vlc_priority_schools")
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 9 — SCHOOL-LEVEL PROFILE (Search)
-  # --------------------------------------------------------------------------
-  fluidRow(
-    box(
-      width = 12,
-      title = tagList(icon("search"), " School Profile — Search by School"),
-      status = "warning", solidHeader = TRUE,
-      collapsible = TRUE, collapsed = TRUE,
-      
-      fluidRow(
-        column(6,
-          selectInput("vlc_school_search", "Select School:",
-                      choices = c("Select a school..." = ""),
-                      width = "100%")
-        ),
-        column(6,
-          br(),
-          uiOutput("vlc_school_narrative")
-        )
-      ),
-      
-      fluidRow(
-        column(6, plotlyOutput("vlc_school_timeline",  height = "200px")),
-        column(6, plotlyOutput("vlc_school_gender_trend", height = "200px"))
-      )
-    )
-  ),
-  
-  # --------------------------------------------------------------------------
-  # SECTION 10 — RAW DATA TABLE
-  # --------------------------------------------------------------------------
-  fluidRow(
-    box(
-      width = 12,
-      title = tagList(icon("table"), " Submission Records"),
-      status = "warning", solidHeader = TRUE,
-      collapsible = TRUE, collapsed = TRUE,
-      
-      fluidRow(
-        column(3,
-          downloadButton("vlc_download_data", "Download Filtered Data",
-                         class = "btn-warning btn-sm")
-        )
-      ),
-      br(),
-      DT::dataTableOutput("vlc_raw_table")
-    )
-  )
-)
+
+        ) # end Tab 4
+
+      ) # end tabsetPanel
+    )   # end column
+  )     # end fluidRow
+)       # end tabItem
 
 # =============================================================================
 # SERVER FUNCTION
