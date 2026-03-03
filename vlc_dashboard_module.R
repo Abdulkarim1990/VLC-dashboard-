@@ -31,6 +31,16 @@ library(RColorBrewer)
 
 TOTAL_SCHOOLS_NATIONAL <- 721
 
+# Official number of SHS per region (GES registry)
+REGIONAL_SCHOOL_TOTALS <- tibble::tibble(
+  Region_hbk5 = c(
+    "Ahafo", "Ashanti", "Bono", "Bono East", "Central", "Eastern",
+    "Greater Accra", "North East", "Northern", "Oti", "Savannah",
+    "Upper East", "Upper West", "Volta", "Western", "Western North"
+  ),
+  region_total = c(18, 144, 37, 29, 75, 94, 47, 18, 31, 25, 13, 35, 31, 68, 38, 18)
+)
+
 # Session catalogue - maps raw session values to clean labels and value group
 SESSION_CATALOGUE <- tibble(
   session_raw = c(
@@ -1070,24 +1080,16 @@ vlc_ui <- tabItem(
           ),
 
           fluidRow(
-            column(8,
+            column(12,
               div(class = "vlc-chart-card",
-                div(class = "chart-ttl", "Sessions Held by Region"),
+                div(class = "chart-ttl", "Regional Summary"),
                 div(class = "chart-sub",
-                    "Bars coloured by average participation rate (red \u2192 green)"),
-                plotlyOutput("vlc_regional_bar", height = "355px")
-              )
-            ),
-            column(4,
-              div(class = "vlc-chart-card",
-                div(class = "chart-ttl", "Regional Rankings"),
-                div(class = "chart-sub",
-                    "Composite score: coverage, attendance, leadership & inclusion"),
-                DT::dataTableOutput("vlc_regional_table"),
+                    "Coverage, participation and composite performance score — bars coloured by avg attendance rate (red \u2192 green)"),
+                DT::dataTableOutput("vlc_regional_summary"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
-                  " Score = equal weighting of coverage, participation,
-                    headteacher presence, and gender balance."
+                  " Composite Score = equal weighting of coverage %, avg attendance %, headteacher presence % and disability inclusion %.",
+                  " Coverage uses official regional school totals."
                 )
               )
             )
@@ -1460,8 +1462,19 @@ vlc_server <- function(input, output, session) {
         .groups = "drop"
       )
     
-    low_schools <- school_summary %>%
-      filter(sessions_n <= 1 | avg_partic < 50) %>%
+    # Schools in any submission that have ZERO held sessions
+    no_session_schools <- all %>%
+      select(Name_school_hbk5, Region_hbk5) %>%
+      distinct() %>%
+      anti_join(school_summary, by = "Name_school_hbk5") %>%
+      mutate(sessions_n = 0L, avg_partic = NA_real_,
+             last_session = as.Date(NA))
+
+    # Schools with held sessions but average participation below 50 %
+    low_partic_schools <- school_summary %>%
+      filter(avg_partic < 50)
+
+    low_schools <- bind_rows(no_session_schools, low_partic_schools) %>%
       arrange(sessions_n, avg_partic)
     
     # Most recent session date
@@ -2106,94 +2119,95 @@ vlc_server <- function(input, output, session) {
   })
   
   # --------------------------------------------------------------------------
-  # PLOT: Regional Bar
+  # TABLE: Regional Summary (coverage + performance + composite rank)
   # --------------------------------------------------------------------------
-  
-  output$vlc_regional_bar <- renderPlotly({
-    df <- vlc_all_subs() %>%
+
+  output$vlc_regional_summary <- DT::renderDataTable({
+    raw <- vlc_all_subs() %>%
       group_by(Region_hbk5) %>%
       summarise(
-        schools_submitted = n_distinct(Name_school_hbk5, na.rm = TRUE),
-        sessions_held     = sum(vlc_held == "Held", na.rm = TRUE),
-        total_students    = sum(total_attended, na.rm = TRUE),
-        avg_participation = mean(participation_pct, na.rm = TRUE),
-        ht_pct            = mean(headteacher_present, na.rm = TRUE) * 100,
-        .groups = "drop"
-      ) %>%
-      filter(!is.na(Region_hbk5))
-    
-    if (nrow(df) == 0) return(plotly_empty())
-    
-    p <- ggplot(df,
-                aes(x = reorder(Region_hbk5, sessions_held),
-                    y = sessions_held,
-                    fill = avg_participation,
-                    text = paste0(Region_hbk5,
-                                  "<br>Sessions held: ", sessions_held,
-                                  "<br>Schools: ", schools_submitted,
-                                  "<br>Students reached: ", format(total_students, big.mark = ","),
-                                  "<br>Avg participation: ", round(avg_participation, 1), "%",
-                                  "<br>Headteacher present: ", round(ht_pct, 1), "%"))) +
-      geom_col(width = 0.7) +
-      coord_flip() +
-      scale_fill_gradient(low = "#E74C3C", high = "#27AE60",
-                          name = "Avg Attendance Rate (%)",
-                          limits = c(0, 100)) +
-      scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-      labs(x = NULL, y = "Total VLC Sessions Held") +
-      theme_minimal(base_size = 11) +
-      theme(panel.grid.minor = element_blank(),
-            panel.grid.major.y = element_blank(),
-            legend.position = "bottom")
-    
-    ggplotly(p, tooltip = "text") %>%
-      layout(coloraxis_colorbar = list(title = "Attendance %"))
-  })
-  
-  # --------------------------------------------------------------------------
-  # TABLE: Regional Rankings
-  # --------------------------------------------------------------------------
-  
-  output$vlc_regional_table <- DT::renderDataTable({
-    df <- vlc_all_subs() %>%
-      group_by(Region_hbk5) %>%
-      summarise(
-        Schools       = n_distinct(Name_school_hbk5, na.rm = TRUE),
-        Sessions      = sum(vlc_held == "Held", na.rm = TRUE),
-        Attendance    = round(mean(participation_pct, na.rm = TRUE), 1),
-        HT_Present    = round(mean(headteacher_present, na.rm = TRUE) * 100, 1),
-        Disability    = round(mean(disability_included == TRUE, na.rm = TRUE) * 100, 1),
+        schools_vlc   = n_distinct(Name_school_hbk5, na.rm = TRUE),
+        sessions_held = sum(vlc_held == "Held", na.rm = TRUE),
+        avg_attend    = round(mean(participation_pct[vlc_held == "Held"], na.rm = TRUE), 1),
+        ht_pct        = round(mean(headteacher_present[vlc_held == "Held"], na.rm = TRUE) * 100, 1),
+        disab_pct     = round(mean((disability_included == TRUE)[vlc_held == "Held"], na.rm = TRUE) * 100, 1),
         .groups = "drop"
       ) %>%
       filter(!is.na(Region_hbk5)) %>%
+      left_join(REGIONAL_SCHOOL_TOTALS, by = "Region_hbk5") %>%
       mutate(
-        # Composite score (equal weights)
+        region_total  = replace_na(region_total, 0),
+        coverage_pct  = round(schools_vlc / region_total * 100, 1),
+        avg_sessions  = round(sessions_held / pmax(schools_vlc, 1), 1),
+        # Composite: equal 25 % weight each pillar, all normalised 0–100
         Score = round(
-          (pmin(Schools / 50, 1) * 25) +
-            (pmin(Attendance / 100, 1) * 25) +
-            (pmin(HT_Present / 100, 1) * 25) +
-            (pmin(Disability / 30, 1) * 25),
+          (pmin(coverage_pct, 100) * 0.25) +
+          (pmin(avg_attend,   100) * 0.25) +
+          (pmin(ht_pct,       100) * 0.25) +
+          (pmin(disab_pct,    100) * 0.25),
           1)
       ) %>%
       arrange(desc(Score)) %>%
       mutate(Rank = row_number()) %>%
-      select(Rank, Region = Region_hbk5, Schools, Sessions,
-             `Attend %` = Attendance, `HT %` = HT_Present,
-             `Disability %` = Disability, Score)
-    
+      select(
+        Rank,
+        Region          = Region_hbk5,
+        `Total Schools` = region_total,
+        `Schools w/ VLC`= schools_vlc,
+        `Coverage %`    = coverage_pct,
+        `Sessions Held` = sessions_held,
+        `Avg Sessions`  = avg_sessions,
+        `Avg Attend %`  = avg_attend,
+        `HT Present %`  = ht_pct,
+        `Inclusion %`   = disab_pct,
+        Score
+      )
+
+    # Colour scale for Avg Attend %: red → green mapped over 0–100
+    attend_vals  <- raw$`Avg Attend %`
+    score_vals   <- raw$Score
+
     DT::datatable(
-      df,
+      raw,
       options = list(
-        pageLength = 8, dom = "t", ordering = TRUE,
+        pageLength = 16, dom = "t", ordering = TRUE,
         columnDefs = list(list(className = "dt-center", targets = "_all"))
       ),
       rownames = FALSE
     ) %>%
-      DT::formatStyle("Score",
-                      background = DT::styleColorBar(range(df$Score), "#E6A817"),
-                      backgroundSize = "100% 80%",
-                      backgroundRepeat = "no-repeat",
-                      backgroundPosition = "center")
+      DT::formatStyle(
+        "Avg Attend %",
+        background = DT::styleColorBar(c(0, 100), "#27AE60"),
+        backgroundSize = "90% 60%",
+        backgroundRepeat = "no-repeat",
+        backgroundPosition = "center"
+      ) %>%
+      DT::formatStyle(
+        "Avg Attend %",
+        color = DT::styleInterval(
+          c(40, 60, 85),
+          c("#C0392B", "#E67E22", "#27AE60", "#1A5276")
+        )
+      ) %>%
+      DT::formatStyle(
+        "Coverage %",
+        background = DT::styleColorBar(c(0, 100), "#2980B9"),
+        backgroundSize = "90% 60%",
+        backgroundRepeat = "no-repeat",
+        backgroundPosition = "center"
+      ) %>%
+      DT::formatStyle(
+        "Score",
+        background = DT::styleColorBar(range(score_vals, na.rm = TRUE), "#E6A817"),
+        backgroundSize = "90% 70%",
+        backgroundRepeat = "no-repeat",
+        backgroundPosition = "center"
+      ) %>%
+      DT::formatStyle(
+        "Rank",
+        fontWeight = "bold",
+        color = DT::styleInterval(c(4, 8, 12), c("#27AE60", "#2980B9", "#E67E22", "#C0392B"))
+      )
   })
   
   # --------------------------------------------------------------------------
@@ -2278,10 +2292,13 @@ vlc_server <- function(input, output, session) {
              Sessions = sessions_n,
              `Avg Partic %` = avg_partic,
              `Last Session` = last_session) %>%
-      mutate(`Avg Partic %` = round(`Avg Partic %`, 1),
-             `Last Session` = format(`Last Session`, "%d %b %Y")) %>%
+      mutate(
+        `Avg Partic %` = ifelse(is.na(`Avg Partic %`), "—", as.character(round(`Avg Partic %`, 1))),
+        `Last Session`  = ifelse(is.na(`Last Session`),  "No sessions held",
+                                 format(`Last Session`, "%d %b %Y"))
+      ) %>%
       head(20)
-    
+
     DT::datatable(
       df,
       options = list(pageLength = 8, dom = "t", scrollY = "300px"),
@@ -2289,7 +2306,7 @@ vlc_server <- function(input, output, session) {
     ) %>%
       DT::formatStyle(
         "Sessions",
-        backgroundColor = DT::styleInterval(c(1, 3), c("#FADBD8", "#FDEBD0", "#EAFAF1"))
+        backgroundColor = DT::styleInterval(c(0, 3), c("#FADBD8", "#FDEBD0", "#EAFAF1"))
       )
   })
   
