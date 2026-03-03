@@ -191,6 +191,10 @@ prepare_vlc_data <- function(raw_data) {
         Have_any_learners_with_disabil == "no"  ~ FALSE,
         TRUE ~ NA
       ),
+      # ---- Count of learners with disabilities in the session -----------------
+      disability_learners_n = suppressWarnings(
+        as.integer(How_many_learners_wi_d_in_the_VLC_session)
+      ),
       
       # ---- Leadership presence index (0-6 scale) ------------------------------
       leadership_score = rowSums(
@@ -1224,7 +1228,34 @@ vlc_ui <- tabItem(
         tabPanel(
           title = tagList(icon("school"), " School-Level Analysis"),
 
-          # Section A: Quadrant
+          # Section A: School Performance Summary Table
+          div(class = "vlc-section-hdr",
+            div(class = "hdr-icon", icon("table")),
+            div(
+              h4("School Performance Summary"),
+              p(class = "hdr-sub",
+                "All schools — delivery, attendance, gender and disability inclusion across every VLC session")
+            )
+          ),
+
+          fluidRow(
+            column(12,
+              div(class = "vlc-chart-card",
+                div(class = "chart-sub",
+                    "Click a column header to sort \u2022 Use the search box to find a school \u2022 Overall Attendance coloured red \u2192 green"),
+                DT::dataTableOutput("vlc_school_summary_table"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Totals are cumulative across all VLC sessions held.",
+                  " \u2018Learners w/ Disabilities\u2019 = cumulative count of learners with disabilities across all sessions."
+                )
+              )
+            )
+          ),
+
+          div(class = "vlc-gap"),
+
+          # Section B: School Action Quadrant
           div(class = "vlc-section-hdr",
             div(class = "hdr-icon", icon("th-large")),
             div(
@@ -2210,6 +2241,112 @@ vlc_server <- function(input, output, session) {
       )
   })
   
+  # --------------------------------------------------------------------------
+  # TABLE: School Performance Summary
+  # --------------------------------------------------------------------------
+
+  output$vlc_school_summary_table <- DT::renderDataTable({
+    df <- vlc_filtered() %>%
+      group_by(Region_hbk5, Name_school_hbk5) %>%
+      summarise(
+        meetings_held    = n(),
+        sessions_list    = paste(sort(unique(na.omit(session_clean))), collapse = ", "),
+        total_enrolled   = sum(total_enrolled,          na.rm = TRUE),
+        total_attended   = sum(total_attended,          na.rm = TRUE),
+        male_enrolled    = sum(no_male_teachers_vlc,    na.rm = TRUE),
+        male_attended    = sum(male_attendance_vlc,     na.rm = TRUE),
+        female_enrolled  = sum(no_female_teachers_vlc,  na.rm = TRUE),
+        female_attended  = sum(female_attendance_vlc,   na.rm = TRUE),
+        disab_learners   = sum(disability_learners_n, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      mutate(
+        overall_att_pct = round(pmin(total_attended  / pmax(total_enrolled,  1), 1) * 100, 1),
+        male_att_pct    = round(pmin(male_attended   / pmax(male_enrolled,   1), 1) * 100, 1),
+        female_att_pct  = round(pmin(female_attended / pmax(female_enrolled, 1), 1) * 100, 1),
+        # "x of y" display strings
+        total_learners  = paste0(format(total_attended,  big.mark = ","), " of ",
+                                 format(total_enrolled,  big.mark = ",")),
+        male_learners   = paste0(format(male_attended,   big.mark = ","), " of ",
+                                 format(male_enrolled,   big.mark = ",")),
+        female_learners = paste0(format(female_attended, big.mark = ","), " of ",
+                                 format(female_enrolled, big.mark = ","))
+      ) %>%
+      arrange(Region_hbk5, Name_school_hbk5) %>%
+      select(
+        Region                        = Region_hbk5,
+        School                        = Name_school_hbk5,
+        `Meetings Held`               = meetings_held,
+        `Sessions Completed`          = sessions_list,
+        `Total Learners`              = total_learners,
+        `Overall Att %`               = overall_att_pct,
+        `Male Learners`               = male_learners,
+        `Male Att %`                  = male_att_pct,
+        `Female Learners`             = female_learners,
+        `Female Att %`                = female_att_pct,
+        `Learners w/ Disabilities`    = disab_learners
+      )
+
+    att_range <- c(0, 100)
+
+    DT::datatable(
+      df,
+      filter  = "top",
+      options = list(
+        pageLength = 15,
+        scrollX    = TRUE,
+        dom        = "lftip",
+        columnDefs = list(
+          # Wrap long sessions list; left-align text cols
+          list(className = "dt-center",
+               targets   = c(2, 4, 5, 6, 7, 8, 9, 10)),
+          list(width = "260px", targets = 3),   # Sessions Completed col
+          list(className = "dt-wrap", targets = 3)
+        )
+      ),
+      rownames = FALSE
+    ) %>%
+      # Overall Att %: colour bar + threshold text colour
+      DT::formatStyle(
+        "Overall Att %",
+        background = DT::styleColorBar(att_range, "#27AE60"),
+        backgroundSize = "90% 55%", backgroundRepeat = "no-repeat",
+        backgroundPosition = "center",
+        color = DT::styleInterval(
+          c(40, 60, 85),
+          c("#C0392B", "#E67E22", "#16A085", "#1A5276")
+        ),
+        fontWeight = "bold"
+      ) %>%
+      # Male Att %: subtle blue bar
+      DT::formatStyle(
+        "Male Att %",
+        background = DT::styleColorBar(att_range, "#2980B9"),
+        backgroundSize = "90% 40%", backgroundRepeat = "no-repeat",
+        backgroundPosition = "center"
+      ) %>%
+      # Female Att %: subtle purple bar
+      DT::formatStyle(
+        "Female Att %",
+        background = DT::styleColorBar(att_range, "#8E44AD"),
+        backgroundSize = "90% 40%", backgroundRepeat = "no-repeat",
+        backgroundPosition = "center"
+      ) %>%
+      # Meetings Held: soft background
+      DT::formatStyle(
+        "Meetings Held",
+        backgroundColor = DT::styleInterval(
+          c(5, 10, 20),
+          c("#FADBD8", "#FDEBD0", "#D5F5E3", "#A9DFBF")
+        )
+      ) %>%
+      # Disability sessions: highlight non-zero
+      DT::formatStyle(
+        "Learners w/ Disabilities",
+        backgroundColor = DT::styleInterval(0, c("#FDFEFE", "#EBF5FB"))
+      )
+  })
+
   # --------------------------------------------------------------------------
   # PLOT: School Quadrant
   # --------------------------------------------------------------------------
