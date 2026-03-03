@@ -1282,7 +1282,7 @@ vlc_ui <- tabItem(
           ),
 
           fluidRow(
-            column(8,
+            column(12,
               div(class = "vlc-chart-card",
                 div(class = "chart-ttl",
                     "Who Needs What Support?"),
@@ -1297,7 +1297,7 @@ vlc_ui <- tabItem(
                   tags$strong("High Attendance"), " = attendance \u2265 national median. ",
                   "Thresholds adapt to the current data. Bubble size = total enrolled learners."
                 ),
-                plotlyOutput("vlc_school_quadrant", height = "370px"),
+                plotlyOutput("vlc_school_quadrant", height = "500px"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
                   " Hover over any point for school details.",
@@ -1332,15 +1332,6 @@ vlc_ui <- tabItem(
                     )
                   )
                 )
-              )
-            ),
-            column(4,
-              div(class = "vlc-chart-card vlc-priority-card",
-                div(class = "chart-ttl",
-                    icon("exclamation-triangle"), " Top 10 Priority Schools"),
-                div(class = "chart-sub",
-                    "Below-median delivery or attendance \u2014 with reason flagged"),
-                DT::dataTableOutput("vlc_priority_schools")
               )
             )
           ),
@@ -2178,7 +2169,9 @@ vlc_server <- function(input, output, session) {
   # --------------------------------------------------------------------------
 
   output$vlc_regional_summary <- DT::renderDataTable({
-    raw <- vlc_all_subs() %>%
+    # Aggregate submission data for regions that have data
+    agg <- vlc_all_subs() %>%
+      filter(!is.na(Region_hbk5)) %>%
       group_by(Region_hbk5) %>%
       summarise(
         schools_vlc   = n_distinct(Name_school_hbk5, na.rm = TRUE),
@@ -2187,19 +2180,22 @@ vlc_server <- function(input, output, session) {
         ht_pct        = round(mean(headteacher_present[vlc_held == "Held"], na.rm = TRUE) * 100, 1),
         disab_pct     = round(mean((disability_included == TRUE)[vlc_held == "Held"], na.rm = TRUE) * 100, 1),
         .groups = "drop"
-      ) %>%
-      filter(!is.na(Region_hbk5)) %>%
-      left_join(REGIONAL_SCHOOL_TOTALS, by = "Region_hbk5") %>%
+      )
+
+    # Start from the authoritative 16-region list so no region is ever dropped
+    raw <- REGIONAL_SCHOOL_TOTALS %>%
+      left_join(agg, by = "Region_hbk5") %>%
       mutate(
-        region_total  = replace_na(region_total, 0),
+        schools_vlc   = replace_na(schools_vlc,   0L),
+        sessions_held = replace_na(sessions_held,  0L),
         coverage_pct  = round(schools_vlc / region_total * 100, 1),
         avg_sessions  = round(sessions_held / pmax(schools_vlc, 1), 1),
         # Composite: equal 25 % weight each pillar, all normalised 0–100
         Score = round(
-          (pmin(coverage_pct, 100) * 0.25) +
-          (pmin(avg_attend,   100) * 0.25) +
-          (pmin(ht_pct,       100) * 0.25) +
-          (pmin(disab_pct,    100) * 0.25),
+          (pmin(coverage_pct,            100) * 0.25) +
+          (pmin(replace_na(avg_attend, 0), 100) * 0.25) +
+          (pmin(replace_na(ht_pct,     0), 100) * 0.25) +
+          (pmin(replace_na(disab_pct,  0), 100) * 0.25),
           1)
       ) %>%
       arrange(desc(Score)) %>%
