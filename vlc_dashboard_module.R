@@ -255,6 +255,23 @@ prepare_vlc_data <- function(raw_data) {
 vlc_ui <- tabItem(
   tabName = "vlc_monitor",
 
+  # ── Clipboard JS for quadrant Copy button ───────────────────────────────────
+  tags$script(HTML("
+    Shiny.addCustomMessageHandler('vlc_copy_to_clipboard', function(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() {
+          var btn = document.getElementById('vlc_quadrant_copy');
+          if (btn) { btn.innerText = '\u2713 Copied!'; setTimeout(function(){ btn.innerText = '\uD83D\uDCCB Copy Data'; }, 2000); }
+        });
+      } else {
+        var el = document.createElement('textarea');
+        el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+        document.body.appendChild(el); el.select(); document.execCommand('copy');
+        document.body.removeChild(el);
+      }
+    });
+  ")),
+
   # ── Custom CSS ─────────────────────────────────────────────────────────────
   tags$style(HTML("
 
@@ -1297,6 +1314,12 @@ vlc_ui <- tabItem(
                   tags$strong("High Attendance"), " = attendance \u2265 national median. ",
                   "Thresholds adapt to the current data. Bubble size = total enrolled learners."
                 ),
+                div(style = "text-align: right; margin-bottom: 4px;",
+                  actionButton("vlc_quadrant_copy",
+                               "\U0001F4CB Copy Data",
+                               class = "btn-sm btn-default",
+                               style = "font-size: 11px; padding: 3px 10px;")
+                ),
                 plotlyOutput("vlc_school_quadrant", height = "500px"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
@@ -2220,8 +2243,19 @@ vlc_server <- function(input, output, session) {
 
     DT::datatable(
       raw,
+      extensions = "Buttons",
       options = list(
-        pageLength = 16, dom = "t", ordering = TRUE,
+        pageLength = 16,
+        dom        = "Bt",
+        ordering   = TRUE,
+        buttons    = list(
+          list(extend = "excel", text = "Excel",
+               filename = "VLC_Regional_Summary"),
+          list(extend = "csv",   text = "CSV",
+               filename = "VLC_Regional_Summary"),
+          list(extend = "pdf",   text = "PDF",
+               title = "VLC Regional Summary", orientation = "landscape")
+        ),
         columnDefs = list(list(className = "dt-center", targets = "_all"))
       ),
       rownames = FALSE
@@ -2316,7 +2350,7 @@ vlc_server <- function(input, output, session) {
     DT::datatable(
       df,
       filter     = "top",
-      extensions = c("Scroller", "FixedHeader", "FixedColumns"),
+      extensions = c("Scroller", "FixedHeader", "FixedColumns", "Buttons"),
       options    = list(
         # Infinite scroll — no pagination
         scrollY      = "520px",
@@ -2325,7 +2359,15 @@ vlc_server <- function(input, output, session) {
         deferRender  = TRUE,
         fixedHeader  = TRUE,
         fixedColumns = list(leftColumns = 2),
-        dom          = "fti",
+        dom          = "Bfti",
+        buttons      = list(
+          list(extend = "excel", text = "Excel",
+               filename = "VLC_School_Performance_Summary"),
+          list(extend = "csv",   text = "CSV",
+               filename = "VLC_School_Performance_Summary"),
+          list(extend = "pdf",   text = "PDF",
+               title = "School Performance Summary", orientation = "landscape")
+        ),
         columnDefs   = list(
           list(className = "dt-center",
                targets   = c(2, 4, 5, 6, 7, 8)),
@@ -2477,7 +2519,52 @@ vlc_server <- function(input, output, session) {
     ggplotly(p, tooltip = "text") %>%
       layout(legend = list(orientation = "h", y = -0.25))
   })
-  
+
+  # Copy button: sends quadrant data as TSV to the browser clipboard
+  observeEvent(input$vlc_quadrant_copy, {
+    df <- vlc_filtered() %>%
+      group_by(Name_school_hbk5, Region_hbk5) %>%
+      summarise(
+        sessions_completed = n(),
+        avg_participation  = round(mean(participation_pct, na.rm = TRUE), 1),
+        total_enrolled     = sum(total_enrolled, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      filter(!is.na(avg_participation))
+
+    med_sessions <- median(df$sessions_completed, na.rm = TRUE)
+    med_att      <- median(df$avg_participation,  na.rm = TRUE)
+
+    df <- df %>%
+      mutate(
+        Classification = case_when(
+          sessions_completed >= med_sessions & avg_participation >= med_att ~
+            "High Delivery / High Attendance",
+          sessions_completed >= med_sessions & avg_participation <  med_att ~
+            "High Delivery / Low Attendance",
+          sessions_completed <  med_sessions & avg_participation >= med_att ~
+            "Low Delivery / High Attendance",
+          TRUE ~ "Low Delivery / Low Attendance"
+        )
+      ) %>%
+      select(
+        School         = Name_school_hbk5,
+        Region         = Region_hbk5,
+        Sessions       = sessions_completed,
+        `Avg Att %`    = avg_participation,
+        Enrolled       = total_enrolled,
+        Classification
+      )
+
+    # Build a tab-separated string (pastes cleanly into Excel/Sheets)
+    tsv <- paste(
+      c(paste(names(df), collapse = "\t"),
+        apply(df, 1, paste, collapse = "\t")),
+      collapse = "\n"
+    )
+    session$sendCustomMessage("vlc_copy_to_clipboard", tsv)
+  })
+
   # --------------------------------------------------------------------------
   # TABLE: Priority Schools
   # --------------------------------------------------------------------------
