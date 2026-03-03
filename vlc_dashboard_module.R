@@ -1234,20 +1234,36 @@ vlc_ui <- tabItem(
             div(
               h4("School Performance Summary"),
               p(class = "hdr-sub",
-                "All schools — delivery, attendance, gender and disability inclusion across every VLC session")
+                "All schools — delivery, attendance, gender and disability inclusion")
             )
           ),
 
           fluidRow(
             column(12,
               div(class = "vlc-chart-card",
-                div(class = "chart-sub",
-                    "Click a column header to sort \u2022 Use the search box to find a school \u2022 Overall Attendance coloured red \u2192 green"),
+                fluidRow(
+                  column(8,
+                    div(class = "chart-sub",
+                        "Scroll to explore all schools \u2022 Region and School columns stay frozen \u2022 Attendance % coloured red \u2192 green")
+                  ),
+                  column(4,
+                    div(style = "text-align: right; padding-top: 2px;",
+                      radioButtons(
+                        "vlc_summary_view",
+                        label    = NULL,
+                        choices  = c("Cumulative (All Sessions)" = "cumulative",
+                                     "Most Recent Session"       = "recent"),
+                        selected = "cumulative",
+                        inline   = TRUE
+                      )
+                    )
+                  )
+                ),
                 DT::dataTableOutput("vlc_school_summary_table"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
-                  " Totals are cumulative across all VLC sessions held.",
-                  " \u2018Learners w/ Disabilities\u2019 = cumulative count of learners with disabilities across all sessions."
+                  " Cumulative view: totals across all sessions held.",
+                  " \u2018% Sess w/ Disab\u2019 = share of sessions that reported learners with disabilities."
                 )
               )
             )
@@ -1271,13 +1287,21 @@ vlc_ui <- tabItem(
                 div(class = "chart-ttl",
                     "Who Needs What Support?"),
                 div(class = "chart-sub",
-                    "X = Participation Rate | Y = Sessions Completed |
-                     Bubble size = Headteacher presence"),
+                    "X = Attendance Rate \u2022 Y = Sessions Completed \u2022 Bubble size = Enrolled learners \u2022 Dashed lines = national medians"),
+                div(
+                  style = "background: #F7FAFC; border: 1px solid #E2E8F0; border-radius: 6px;
+                           padding: 8px 12px; margin-bottom: 10px; font-size: 11px; color: #4A5568;",
+                  icon("info-circle", style = "color: #2980B9;"), " ",
+                  tags$strong("Classification: "),
+                  tags$strong("High Delivery"), " = sessions \u2265 national median. ",
+                  tags$strong("High Attendance"), " = attendance \u2265 national median. ",
+                  "Thresholds adapt to the current data. Bubble size = total enrolled learners."
+                ),
                 plotlyOutput("vlc_school_quadrant", height = "370px"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
-                  " Hover over any point for school details.
-                    Bottom-left quadrant = priority for intervention."
+                  " Hover over any point for school details.",
+                  " Use the global Region filter above to focus on a specific region."
                 ),
                 div(
                   class = "vlc-qlgnd",
@@ -1286,24 +1310,24 @@ vlc_ui <- tabItem(
                       div(class = "vlc-qlgnd-item",
                         div(class = "vlc-qlgnd-dot",
                             style = "background: #27AE60;"),
-                        tags$strong("Exemplar:"), " \u22653 sessions & \u226575% attendance"
+                        tags$strong("High Delivery / High Attendance")
                       ),
                       div(class = "vlc-qlgnd-item",
                         div(class = "vlc-qlgnd-dot",
                             style = "background: #E67E22;"),
-                        tags$strong("Quality Concern:"), " \u22653 sessions, low attendance"
+                        tags$strong("High Delivery / Low Attendance")
                       )
                     ),
                     column(6,
                       div(class = "vlc-qlgnd-item",
                         div(class = "vlc-qlgnd-dot",
                             style = "background: #2980B9;"),
-                        tags$strong("Access Barrier:"), " Few sessions, high attendance"
+                        tags$strong("Low Delivery / High Attendance")
                       ),
                       div(class = "vlc-qlgnd-item",
                         div(class = "vlc-qlgnd-dot",
                             style = "background: #E74C3C;"),
-                        tags$strong("Priority Intervention:"), " Low delivery & attendance"
+                        tags$strong("Low Delivery / Low Attendance")
                       )
                     )
                   )
@@ -1313,9 +1337,9 @@ vlc_ui <- tabItem(
             column(4,
               div(class = "vlc-chart-card vlc-priority-card",
                 div(class = "chart-ttl",
-                    icon("exclamation-triangle"), " Priority Follow-Up Schools"),
+                    icon("exclamation-triangle"), " Top 10 Priority Schools"),
                 div(class = "chart-sub",
-                    "Schools with low coverage AND low participation"),
+                    "Below-median delivery or attendance \u2014 with reason flagged"),
                 DT::dataTableOutput("vlc_priority_schools")
               )
             )
@@ -2246,71 +2270,81 @@ vlc_server <- function(input, output, session) {
   # --------------------------------------------------------------------------
 
   output$vlc_school_summary_table <- DT::renderDataTable({
-    df <- vlc_filtered() %>%
+    base_df <- vlc_filtered()
+
+    # Apply view mode: filter each school to only its most recent session date
+    if (isTRUE(input$vlc_summary_view == "recent")) {
+      base_df <- base_df %>%
+        group_by(Name_school_hbk5) %>%
+        filter(session_date == max(session_date, na.rm = TRUE)) %>%
+        ungroup()
+    }
+
+    df <- base_df %>%
       group_by(Region_hbk5, Name_school_hbk5) %>%
       summarise(
-        meetings_held    = n(),
-        sessions_list    = paste(sort(unique(na.omit(session_clean))), collapse = ", "),
-        total_enrolled   = sum(total_enrolled,          na.rm = TRUE),
-        total_attended   = sum(total_attended,          na.rm = TRUE),
-        male_enrolled    = sum(no_male_teachers_vlc,    na.rm = TRUE),
-        male_attended    = sum(male_attendance_vlc,     na.rm = TRUE),
-        female_enrolled  = sum(no_female_teachers_vlc,  na.rm = TRUE),
-        female_attended  = sum(female_attendance_vlc,   na.rm = TRUE),
-        disab_learners   = sum(disability_learners_n, na.rm = TRUE),
+        meetings_held   = n(),
+        sessions_list   = paste(sort(unique(na.omit(session_clean))), collapse = ", "),
+        total_enrolled  = sum(total_enrolled,         na.rm = TRUE),
+        total_attended  = sum(total_attended,         na.rm = TRUE),
+        male_enrolled   = sum(no_male_teachers_vlc,   na.rm = TRUE),
+        male_attended   = sum(male_attendance_vlc,    na.rm = TRUE),
+        female_enrolled = sum(no_female_teachers_vlc, na.rm = TRUE),
+        female_attended = sum(female_attendance_vlc,  na.rm = TRUE),
+        # % of sessions that reported any learner with a disability
+        pct_disab       = round(mean(disability_included == TRUE, na.rm = TRUE) * 100, 0),
         .groups = "drop"
       ) %>%
       mutate(
         overall_att_pct = round(pmin(total_attended  / pmax(total_enrolled,  1), 1) * 100, 1),
         male_att_pct    = round(pmin(male_attended   / pmax(male_enrolled,   1), 1) * 100, 1),
         female_att_pct  = round(pmin(female_attended / pmax(female_enrolled, 1), 1) * 100, 1),
-        # "x of y" display strings
-        total_learners  = paste0(format(total_attended,  big.mark = ","), " of ",
-                                 format(total_enrolled,  big.mark = ",")),
-        male_learners   = paste0(format(male_attended,   big.mark = ","), " of ",
-                                 format(male_enrolled,   big.mark = ",")),
-        female_learners = paste0(format(female_attended, big.mark = ","), " of ",
-                                 format(female_enrolled, big.mark = ","))
+        total_learners  = paste0(format(total_attended, big.mark = ","), " / ",
+                                 format(total_enrolled, big.mark = ","))
       ) %>%
       arrange(Region_hbk5, Name_school_hbk5) %>%
       select(
-        Region                        = Region_hbk5,
-        School                        = Name_school_hbk5,
-        `Meetings Held`               = meetings_held,
-        `Sessions Completed`          = sessions_list,
-        `Total Learners`              = total_learners,
-        `Overall Att %`               = overall_att_pct,
-        `Male Learners`               = male_learners,
-        `Male Att %`                  = male_att_pct,
-        `Female Learners`             = female_learners,
-        `Female Att %`                = female_att_pct,
-        `Learners w/ Disabilities`    = disab_learners
+        Region                  = Region_hbk5,
+        School                  = Name_school_hbk5,
+        `Sessions`              = meetings_held,
+        `Topics Covered`        = sessions_list,
+        `Attended / Enrolled`   = total_learners,
+        `Att %`                 = overall_att_pct,
+        `Male Att %`            = male_att_pct,
+        `Female Att %`          = female_att_pct,
+        `% Sess w/ Disab`       = pct_disab
       )
 
     att_range <- c(0, 100)
 
     DT::datatable(
       df,
-      filter  = "top",
-      options = list(
-        pageLength = 15,
-        scrollX    = TRUE,
-        dom        = "lftip",
-        columnDefs = list(
-          # Wrap long sessions list; left-align text cols
+      filter     = "top",
+      extensions = c("Scroller", "FixedHeader", "FixedColumns"),
+      options    = list(
+        # Infinite scroll — no pagination
+        scrollY      = "520px",
+        scrollX      = TRUE,
+        scroller     = TRUE,
+        deferRender  = TRUE,
+        fixedHeader  = TRUE,
+        fixedColumns = list(leftColumns = 2),
+        dom          = "fti",
+        columnDefs   = list(
           list(className = "dt-center",
-               targets   = c(2, 4, 5, 6, 7, 8, 9, 10)),
-          list(width = "260px", targets = 3),   # Sessions Completed col
+               targets   = c(2, 4, 5, 6, 7, 8)),
+          list(width = "220px", targets = 3),
           list(className = "dt-wrap", targets = 3)
         )
       ),
       rownames = FALSE
     ) %>%
-      # Overall Att %: colour bar + threshold text colour
+      # Overall Att %: single green colour bar + text colour thresholds
       DT::formatStyle(
-        "Overall Att %",
-        background = DT::styleColorBar(att_range, "#27AE60"),
-        backgroundSize = "90% 55%", backgroundRepeat = "no-repeat",
+        "Att %",
+        background         = DT::styleColorBar(att_range, "#27AE60"),
+        backgroundSize     = "90% 55%",
+        backgroundRepeat   = "no-repeat",
         backgroundPosition = "center",
         color = DT::styleInterval(
           c(40, 60, 85),
@@ -2318,32 +2352,35 @@ vlc_server <- function(input, output, session) {
         ),
         fontWeight = "bold"
       ) %>%
-      # Male Att %: subtle blue bar
+      # Male Att %: text colour only (no bar)
       DT::formatStyle(
         "Male Att %",
-        background = DT::styleColorBar(att_range, "#2980B9"),
-        backgroundSize = "90% 40%", backgroundRepeat = "no-repeat",
-        backgroundPosition = "center"
+        color = DT::styleInterval(
+          c(40, 70),
+          c("#C0392B", "#E67E22", "#2980B9")
+        )
       ) %>%
-      # Female Att %: subtle purple bar
+      # Female Att %: text colour only (no bar)
       DT::formatStyle(
         "Female Att %",
-        background = DT::styleColorBar(att_range, "#8E44AD"),
-        backgroundSize = "90% 40%", backgroundRepeat = "no-repeat",
-        backgroundPosition = "center"
+        color = DT::styleInterval(
+          c(40, 70),
+          c("#C0392B", "#E67E22", "#8E44AD")
+        )
       ) %>%
-      # Meetings Held: soft background
+      # Sessions count: warm-to-cool gradient
       DT::formatStyle(
-        "Meetings Held",
+        "Sessions",
         backgroundColor = DT::styleInterval(
-          c(5, 10, 20),
+          c(2, 5, 10),
           c("#FADBD8", "#FDEBD0", "#D5F5E3", "#A9DFBF")
         )
       ) %>%
-      # Disability sessions: highlight non-zero
+      # Disability share: highlight schools with any reported inclusion
       DT::formatStyle(
-        "Learners w/ Disabilities",
-        backgroundColor = DT::styleInterval(0, c("#FDFEFE", "#EBF5FB"))
+        "% Sess w/ Disab",
+        backgroundColor = DT::styleInterval(0, c("#FDFEFE", "#EBF5FB")),
+        color = DT::styleInterval(0, c("#95A5A6", "#1A5276"))
       )
   })
 
@@ -2356,66 +2393,93 @@ vlc_server <- function(input, output, session) {
       group_by(Name_school_hbk5, Region_hbk5) %>%
       summarise(
         sessions_completed = n(),
-        avg_participation  = mean(participation_pct, na.rm = TRUE),
-        ht_pct             = mean(headteacher_present, na.rm = TRUE) * 100,
+        avg_participation  = mean(participation_pct,  na.rm = TRUE),
+        total_enrolled     = sum(total_enrolled,       na.rm = TRUE),
         .groups = "drop"
       ) %>%
-      filter(!is.na(avg_participation)) %>%
+      filter(!is.na(avg_participation))
+
+    if (nrow(df) == 0) return(plotly_empty())
+
+    # Data-driven thresholds: national medians from the current filtered dataset
+    med_sessions <- median(df$sessions_completed, na.rm = TRUE)
+    med_att      <- median(df$avg_participation,  na.rm = TRUE)
+
+    df <- df %>%
       mutate(
         quadrant = case_when(
-          sessions_completed >= 3 & avg_participation >= 75 ~ "Exemplar",
-          sessions_completed >= 3 & avg_participation < 75  ~ "Quality Concern",
-          sessions_completed < 3  & avg_participation >= 75 ~ "Access Barrier",
-          TRUE                                               ~ "Priority Intervention"
-        ),
-        q_color = case_when(
-          quadrant == "Exemplar"             ~ "#27AE60",
-          quadrant == "Quality Concern"      ~ "#E67E22",
-          quadrant == "Access Barrier"       ~ "#2980B9",
-          quadrant == "Priority Intervention"~ "#E74C3C"
+          sessions_completed >= med_sessions & avg_participation >= med_att ~
+            "High Delivery / High Attendance",
+          sessions_completed >= med_sessions & avg_participation < med_att  ~
+            "High Delivery / Low Attendance",
+          sessions_completed <  med_sessions & avg_participation >= med_att ~
+            "Low Delivery / High Attendance",
+          TRUE ~
+            "Low Delivery / Low Attendance"
         )
       )
-    
-    if (nrow(df) == 0) return(plotly_empty())
-    
-    med_s <- median(df$sessions_completed)
-    med_p <- median(df$avg_participation, na.rm = TRUE)
-    
+
+    # Annotation positions: corners of each quadrant
+    x_lo <- min(df$avg_participation,  na.rm = TRUE)
+    x_hi <- max(df$avg_participation,  na.rm = TRUE)
+    y_lo <- min(df$sessions_completed, na.rm = TRUE)
+    y_hi <- max(df$sessions_completed, na.rm = TRUE)
+    x_pad <- (x_hi - x_lo) * 0.06
+    y_pad <- max((y_hi - y_lo) * 0.04, 0.3)
+
     p <- ggplot(df,
                 aes(x = avg_participation, y = sessions_completed,
-                    colour = quadrant, size = ht_pct,
-                    text = paste0(Name_school_hbk5,
-                                  "<br>Region: ", Region_hbk5,
-                                  "<br>Sessions: ", sessions_completed,
-                                  "<br>Avg attendance: ", round(avg_participation, 1), "%",
-                                  "<br>HT present: ", round(ht_pct, 1), "%",
-                                  "<br>Quadrant: ", quadrant))) +
-      geom_vline(xintercept = 75, linetype = "dashed", colour = "#BDC3C7") +
-      geom_hline(yintercept = 3,  linetype = "dashed", colour = "#BDC3C7") +
+                    colour = quadrant,
+                    size   = total_enrolled,
+                    text   = paste0(
+                      "<b>", Name_school_hbk5, "</b>",
+                      "<br>Region: ",      Region_hbk5,
+                      "<br>Sessions: ",    sessions_completed,
+                        " (median: ", round(med_sessions, 1), ")",
+                      "<br>Attendance: ",  round(avg_participation, 1), "%",
+                        " (median: ", round(med_att, 1), "%)",
+                      "<br>Enrolled: ",    format(total_enrolled, big.mark = ","),
+                      "<br>", quadrant
+                    ))) +
+      geom_vline(xintercept = med_att,      linetype = "dashed",
+                 colour = "#95A5A6", linewidth = 0.7) +
+      geom_hline(yintercept = med_sessions, linetype = "dashed",
+                 colour = "#95A5A6", linewidth = 0.7) +
       geom_point(alpha = 0.7) +
       scale_colour_manual(
-        values = c("Exemplar"              = "#27AE60",
-                   "Quality Concern"       = "#E67E22",
-                   "Access Barrier"        = "#2980B9",
-                   "Priority Intervention" = "#E74C3C")
+        values = c(
+          "High Delivery / High Attendance" = "#27AE60",
+          "High Delivery / Low Attendance"  = "#E67E22",
+          "Low Delivery / High Attendance"  = "#2980B9",
+          "Low Delivery / Low Attendance"   = "#E74C3C"
+        )
       ) +
-      scale_size_continuous(range = c(2, 6), guide = "none") +
-      annotate("text", x = 88, y = max(df$sessions_completed) * 0.95,
-               label = "Exemplar", colour = "#27AE60", size = 3, fontface = "bold") +
-      annotate("text", x = 40, y = max(df$sessions_completed) * 0.95,
-               label = "Access\nBarrier", colour = "#2980B9", size = 3, fontface = "bold") +
-      annotate("text", x = 88, y = 1,
-               label = "Quality\nConcern", colour = "#E67E22", size = 3, fontface = "bold") +
-      annotate("text", x = 40, y = 1,
-               label = "Priority\nIntervention", colour = "#E74C3C", size = 3, fontface = "bold") +
-      labs(x = "Average Attendance Rate (%)", y = "Sessions Completed",
-           colour = "Quadrant") +
+      scale_size_continuous(range = c(2, 9), guide = "none") +
+      annotate("text", x = x_hi - x_pad, y = y_hi - y_pad,
+               label = "High Delivery\nHigh Attendance",
+               colour = "#27AE60", size = 2.7, fontface = "bold", hjust = 1) +
+      annotate("text", x = x_lo + x_pad, y = y_hi - y_pad,
+               label = "Low Delivery\nHigh Attendance",
+               colour = "#2980B9", size = 2.7, fontface = "bold", hjust = 0) +
+      annotate("text", x = x_hi - x_pad, y = y_lo + y_pad,
+               label = "High Delivery\nLow Attendance",
+               colour = "#E67E22", size = 2.7, fontface = "bold", hjust = 1) +
+      annotate("text", x = x_lo + x_pad, y = y_lo + y_pad,
+               label = "Low Delivery\nLow Attendance",
+               colour = "#E74C3C", size = 2.7, fontface = "bold", hjust = 0) +
+      labs(
+        x      = paste0("Average Attendance Rate (%)  \u2014  median = ",
+                         round(med_att, 1), "%"),
+        y      = paste0("Sessions Completed  \u2014  median = ",
+                         round(med_sessions, 1)),
+        colour = NULL
+      ) +
       theme_minimal(base_size = 11) +
-      theme(legend.position = "bottom",
+      theme(legend.position  = "bottom",
             panel.grid.minor = element_blank())
-    
+
     ggplotly(p, tooltip = "text") %>%
-      layout(legend = list(orientation = "h", y = -0.2))
+      layout(legend = list(orientation = "h", y = -0.25))
   })
   
   # --------------------------------------------------------------------------
@@ -2423,27 +2487,64 @@ vlc_server <- function(input, output, session) {
   # --------------------------------------------------------------------------
   
   output$vlc_priority_schools <- DT::renderDataTable({
-    df <- vlc_stats()$low_schools %>%
-      select(School = Name_school_hbk5,
-             Region = Region_hbk5,
-             Sessions = sessions_n,
-             `Avg Partic %` = avg_partic,
-             `Last Session` = last_session) %>%
-      mutate(
-        `Avg Partic %` = ifelse(is.na(`Avg Partic %`), "—", as.character(round(`Avg Partic %`, 1))),
-        `Last Session`  = ifelse(is.na(`Last Session`),  "No sessions held",
-                                 format(`Last Session`, "%d %b %Y"))
+    school_data <- vlc_filtered() %>%
+      group_by(Name_school_hbk5, Region_hbk5) %>%
+      summarise(
+        sessions_n   = n(),
+        avg_partic   = round(mean(participation_pct, na.rm = TRUE), 1),
+        .groups      = "drop"
+      )
+
+    # Data-driven thresholds from current filtered data
+    med_sessions <- median(school_data$sessions_n, na.rm = TRUE)
+    med_att      <- median(school_data$avg_partic,  na.rm = TRUE)
+
+    df <- school_data %>%
+      filter(
+        sessions_n < med_sessions |
+        (!is.na(avg_partic) & avg_partic < med_att)
       ) %>%
-      head(20)
+      mutate(
+        why_flagged = case_when(
+          sessions_n < med_sessions & (!is.na(avg_partic) & avg_partic < med_att) ~
+            paste0(sessions_n, " sessions (median: ", round(med_sessions),
+                   "); ", avg_partic, "% att (median: ", round(med_att, 1), "%)"),
+          sessions_n < med_sessions ~
+            paste0("Only ", sessions_n, " session(s) \u2014 median is ",
+                   round(med_sessions)),
+          TRUE ~
+            paste0(avg_partic, "% attendance below median (",
+                   round(med_att, 1), "%)")
+        )
+      ) %>%
+      arrange(sessions_n, avg_partic) %>%
+      select(
+        School        = Name_school_hbk5,
+        Region        = Region_hbk5,
+        Sessions      = sessions_n,
+        `Att %`       = avg_partic,
+        `Why Flagged` = why_flagged
+      ) %>%
+      head(10)
 
     DT::datatable(
       df,
-      options = list(pageLength = 8, dom = "t", scrollY = "300px"),
+      options  = list(dom = "t", scrollY = "330px", scrollX = TRUE),
       rownames = FALSE
     ) %>%
       DT::formatStyle(
         "Sessions",
-        backgroundColor = DT::styleInterval(c(0, 3), c("#FADBD8", "#FDEBD0", "#EAFAF1"))
+        backgroundColor = DT::styleInterval(
+          c(0, 3), c("#FADBD8", "#FDEBD0", "#EAFAF1")
+        )
+      ) %>%
+      DT::formatStyle(
+        "Att %",
+        color = DT::styleInterval(
+          c(40, 60),
+          c("#C0392B", "#E67E22", "#27AE60")
+        ),
+        fontWeight = "bold"
       )
   })
   
