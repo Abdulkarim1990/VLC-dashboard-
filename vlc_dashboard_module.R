@@ -79,7 +79,7 @@ SESSION_CATALOGUE <- tibble(
     "Adaptability", "Adaptability",
     "Resourcefulness", "Resourcefulness",
     "Leadership", "Leadership",
-    "Building Confidence", "Building Confidence"
+    "Confidence", "Confidence"
   ),
   session_type = c(
     "Orientation",
@@ -121,7 +121,7 @@ THEME_COLOURS <- c(
   "Adaptability"             = "#D35400",
   "Resourcefulness"          = "#1ABC9C",
   "Leadership"               = "#2C3E50",
-  "Building Confidence"      = "#C0392B"
+  "Confidence"               = "#C0392B"
 )
 
 # =============================================================================
@@ -141,6 +141,15 @@ prepare_vlc_data <- function(raw_data) {
       week_of_term = as.numeric(difftime(session_date,
                                           min(session_date, na.rm = TRUE),
                                           units = "weeks")) + 1,
+
+      # ---- Academic Year (Sept–Aug cycle) ------------------------------------
+      academic_year = case_when(
+        month(session_date) >= 9 ~
+          paste0(year(session_date), "/", year(session_date) + 1),
+        !is.na(session_date) ~
+          paste0(year(session_date) - 1, "/", year(session_date)),
+        TRUE ~ NA_character_
+      ),
       
       # ---- Session took place ------------------------------------------------
       vlc_held = case_when(
@@ -279,67 +288,102 @@ vlc_ui <- tabItem(
 
     /* ── Hero Banner ───────────────────────────────────────────────────── */
     .vlc-hero {
-      background: linear-gradient(135deg, #1B2A4A 0%, #15405E 55%, #0E7C7B 100%);
+      background: #1B2A4A;
       border-radius: 10px;
-      padding: 46px 40px 36px;
+      padding: 40px 40px 32px;
       color: white;
       margin-bottom: 24px;
       position: relative;
       overflow: hidden;
-    }
-    .vlc-hero::after {
-      content: '';
-      position: absolute;
-      top: -60px; right: -60px;
-      width: 300px; height: 300px;
-      background: rgba(230, 168, 23, 0.07);
-      border-radius: 50%;
+      border-bottom: 3px solid #C9A227;
     }
     .vlc-hero-badge {
       display: inline-block;
-      background: rgba(230, 168, 23, 0.18);
-      border: 1px solid rgba(230, 168, 23, 0.45);
-      color: #E6A817;
-      border-radius: 20px;
-      padding: 4px 14px;
+      background: rgba(201, 162, 39, 0.12);
+      border: 1px solid rgba(201, 162, 39, 0.35);
+      color: #C9A227;
+      border-radius: 4px;
+      padding: 4px 12px;
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.2px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .vlc-hero-title {
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
-      color: #E6A817;
+      color: #FFFFFF;
       margin: 0 0 6px;
-      line-height: 1.2;
+      line-height: 1.25;
     }
     .vlc-hero-sub {
-      font-size: 15px;
-      color: #CBD5E0;
+      font-size: 14px;
+      color: #A0AEC0;
       margin: 0 0 28px;
     }
     .vlc-stat-pill {
-      background: rgba(255,255,255,0.09);
-      border: 1px solid rgba(255,255,255,0.18);
+      background: #FFFFFF;
       border-radius: 8px;
-      padding: 14px 10px;
+      padding: 16px 14px;
       text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.18);
     }
     .vlc-stat-num {
-      font-size: 30px;
+      font-size: 26px;
       font-weight: 800;
-      color: #E6A817;
+      color: #1B2A4A;
       line-height: 1;
       display: block;
     }
     .vlc-stat-lbl {
       font-size: 10px;
-      color: #A0AEC0;
+      color: #718096;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-top: 5px;
+    }
+
+    /* ── KPI Group Cards ───────────────────────────────────────────────── */
+    .kpi-group {
+      background: white;
+      border-radius: 10px;
+      padding: 16px 20px 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom: 14px;
+    }
+    .kpi-group-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #718096;
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #EDF2F7;
+    }
+    .kpi-metric {
+      padding: 8px 4px;
+      text-align: center;
+      border-right: 1px solid #EDF2F7;
+    }
+    .kpi-metric:last-child { border-right: none; }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #1B2A4A;
+      line-height: 1;
+    }
+    .kpi-label {
+      font-size: 11px;
+      color: #4A5568;
+      margin-top: 5px;
+      line-height: 1.3;
+    }
+    .kpi-sub {
+      font-size: 10px;
+      color: #A0AEC0;
+      margin-top: 2px;
     }
 
     /* ── Info Cards ────────────────────────────────────────────────────── */
@@ -582,9 +626,12 @@ vlc_ui <- tabItem(
       title = tagList(icon("sliders-h"), " Filters"),
 
       column(3,
-        selectInput("vlc_filter_term", "Academic Term:",
-                    choices = c("All Terms" = "all", "Term 1" = "1", "Term 2" = "2"),
-                    selected = "all")
+        selectInput("vlc_filter_year", "Academic Year:",
+                    choices = c("All Years"  = "all",
+                                "2025/2026"  = "2025/2026",
+                                "2026/2027"  = "2026/2027",
+                                "2027/2028"  = "2027/2028"),
+                    selected = "2025/2026")
       ),
       column(3,
         selectInput("vlc_filter_region", "Region:",
@@ -719,7 +766,7 @@ vlc_ui <- tabItem(
                   list("Adaptability",            "#D35400"),
                   list("Resourcefulness",         "#1ABC9C"),
                   list("Leadership",              "#2C3E50"),
-                  list("Building Confidence",     "#C0392B")
+                  list("Confidence",              "#C0392B")
                 ),
                 function(v) {
                   div(
@@ -771,15 +818,15 @@ vlc_ui <- tabItem(
           div(class = "vlc-section-hdr",
             div(class = "hdr-icon", icon("rss")),
             div(
-              h4("Ghana's Values Formation Pulse"),
-              p(class = "hdr-sub", "Live programme data — national overview")
+              h4("Live Data Summary"),
+              p(class = "hdr-sub", "Current programme data — national overview")
             )
           ),
 
           div(
             class = "vlc-narrative-card",
             div(class = "narr-eyebrow",
-                icon("align-left"), " Live Data Story"),
+                icon("align-left"), " Live Data Summary"),
             div(class = "narr-body",
                 uiOutput("vlc_narrative_text"))
           ),
@@ -793,8 +840,8 @@ vlc_ui <- tabItem(
             ),
             column(4,
               div(class = "vlc-signal-card", style = "border-top-color: #2980B9;",
-                uiOutput("vlc_signal_learners"),
-                div(class = "sig-label", "Cumulative Learner Touchpoints")
+                uiOutput("vlc_signal_attendance"),
+                div(class = "sig-label", "Avg Attendance per Session")
               )
             ),
             column(4,
@@ -816,13 +863,81 @@ vlc_ui <- tabItem(
             )
           ),
 
-          fluidRow(
-            valueBoxOutput("vlc_kpi_submissions",   width = 2),
-            valueBoxOutput("vlc_kpi_schools_held",  width = 2),
-            valueBoxOutput("vlc_kpi_students",      width = 2),
-            valueBoxOutput("vlc_kpi_participation", width = 2),
-            valueBoxOutput("vlc_kpi_headteacher",   width = 2),
-            valueBoxOutput("vlc_kpi_disability",    width = 2)
+          # Group 1: National Coverage
+          div(
+            class = "kpi-group",
+            div(class = "kpi-group-title",
+                icon("school"), " National Coverage"),
+            fluidRow(
+              column(4,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_active_schools"),
+                  div(class = "kpi-label", "Active Schools"),
+                  div(class = "kpi-sub",
+                      paste0("of ", TOTAL_SCHOOLS_NATIONAL, " nationally"))
+                )
+              ),
+              column(4,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_coverage_pct"),
+                  div(class = "kpi-label", "National Coverage"),
+                  div(class = "kpi-sub", "schools with submissions")
+                )
+              ),
+              column(4,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_followup"),
+                  div(class = "kpi-label", "Schools for Follow-Up"),
+                  div(class = "kpi-sub", "low coverage or attendance")
+                )
+              )
+            )
+          ),
+
+          # Group 2: Programme Delivery
+          div(
+            class = "kpi-group",
+            div(class = "kpi-group-title",
+                icon("chart-bar"), " Programme Delivery"),
+            fluidRow(
+              column(6,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_sessions"),
+                  div(class = "kpi-label", "Sessions Delivered"),
+                  div(class = "kpi-sub", "VLC sessions held")
+                )
+              ),
+              column(6,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_avg_attend"),
+                  div(class = "kpi-label", "Avg Attendance per Session"),
+                  div(class = "kpi-sub", "learner participation rate")
+                )
+              )
+            )
+          ),
+
+          # Group 3: Quality & Inclusion
+          div(
+            class = "kpi-group",
+            div(class = "kpi-group-title",
+                icon("check-circle"), " Quality & Inclusion"),
+            fluidRow(
+              column(6,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_headteacher_new"),
+                  div(class = "kpi-label", "Headteacher Participation"),
+                  div(class = "kpi-sub", "% of sessions attended")
+                )
+              ),
+              column(6,
+                div(class = "kpi-metric",
+                  uiOutput("vlc_kpi_disability_new"),
+                  div(class = "kpi-label", "Disability Inclusion Rate"),
+                  div(class = "kpi-sub", "sessions with learners with disabilities")
+                )
+              )
+            )
           ),
 
           div(class = "vlc-gap"),
@@ -846,8 +961,8 @@ vlc_ui <- tabItem(
                 plotlyOutput("vlc_weekly_trend", height = "265px"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
-                  " A declining trend signals implementation fatigue and requires
-                    regional follow-up."
+                  " Week-by-week submission volumes. A sustained decline may
+                    indicate schools requiring follow-up."
                 )
               )
             ),
@@ -868,40 +983,70 @@ vlc_ui <- tabItem(
 
           div(class = "vlc-gap"),
 
-          # Section D: Session Content
+          # Section D: Session Content Analysis
           div(class = "vlc-section-hdr",
             div(class = "hdr-icon", icon("book-open")),
             div(
               h4("Session Content Analysis"),
               p(class = "hdr-sub",
-                "Which values are being taught, and where across the country")
+                "Programme rollout stage and value theme distribution")
             )
           ),
 
+          # Block 1: Rollout Progression
+          fluidRow(
+            column(12,
+              div(class = "vlc-chart-card",
+                div(class = "chart-ttl", "Current Rollout Stage"),
+                div(class = "chart-sub",
+                    "Distribution of sessions delivered per school"),
+                fluidRow(
+                  column(4,
+                    div(style = "text-align: center; padding: 8px;",
+                      uiOutput("vlc_rollout_s0_pct"))
+                  ),
+                  column(4,
+                    div(style = "text-align: center; padding: 8px;",
+                      uiOutput("vlc_rollout_2plus_pct"))
+                  ),
+                  column(4,
+                    div(style = "text-align: center; padding: 8px;",
+                      uiOutput("vlc_rollout_avg_sessions"))
+                  )
+                ),
+                br(),
+                plotlyOutput("vlc_rollout_chart", height = "190px"),
+                div(class = "vlc-chart-note",
+                  icon("info-circle"),
+                  " Schools are required to begin at Session 0.",
+                  " Distribution reflects current rollout stage."
+                )
+              )
+            )
+          ),
+
+          div(class = "vlc-gap-sm"),
+
+          # Block 2 & Block 3 side by side
           fluidRow(
             column(6,
               div(class = "vlc-chart-card",
-                div(class = "chart-ttl", "Session Coverage"),
+                div(class = "chart-ttl", "Value Themes Delivered to Date"),
                 div(class = "chart-sub",
-                    "Most frequently delivered sessions nationally"),
-                plotlyOutput("vlc_session_coverage", height = "340px"),
-                div(class = "vlc-chart-note",
-                  icon("info-circle"),
-                  " Low delivery of later sessions signals schools are not
-                    progressing through the full values curriculum."
-                )
+                    "Total sessions delivered nationally per value theme"),
+                plotlyOutput("vlc_theme_national", height = "340px")
               )
             ),
             column(6,
               div(class = "vlc-chart-card",
                 div(class = "chart-ttl", "Value Theme Delivery by Region"),
                 div(class = "chart-sub",
-                    "Heatmap: session volume per value theme and region"),
+                    "Sessions per active school — normalized across regions"),
                 plotlyOutput("vlc_theme_region_heatmap", height = "340px"),
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
-                  " Darker cells = more sessions on that value theme delivered
-                    in that region."
+                  " Values shown represent sessions delivered per active school
+                    in each region."
                 )
               )
             )
@@ -1249,7 +1394,7 @@ vlc_server <- function(input, output, session) {
   
   # Reset filters
   observeEvent(input$vlc_reset_filters, {
-    updateSelectInput(session, "vlc_filter_term",    selected = "all")
+    updateSelectInput(session, "vlc_filter_year",    selected = "2025/2026")
     updateSelectInput(session, "vlc_filter_region",  selected = "all")
     updateSelectInput(session, "vlc_filter_session", selected = "all")
   })
@@ -1260,24 +1405,24 @@ vlc_server <- function(input, output, session) {
   
   vlc_filtered <- reactive({
     df <- vlc_data() %>% filter(vlc_held == "Held")
-    
-    if (input$vlc_filter_term != "all")
-      df <- df %>% filter(term_academic_vlc == as.integer(input$vlc_filter_term))
-    
+
+    if (input$vlc_filter_year != "all")
+      df <- df %>% filter(academic_year == input$vlc_filter_year)
+
     if (input$vlc_filter_region != "all")
       df <- df %>% filter(Region_hbk5 == input$vlc_filter_region)
-    
+
     if (input$vlc_filter_session != "all")
       df <- df %>% filter(session_clean == input$vlc_filter_session)
-    
+
     df
   })
-  
+
   # All submissions (including non-held)
   vlc_all_subs <- reactive({
     df <- vlc_data()
-    if (input$vlc_filter_term != "all")
-      df <- df %>% filter(term_academic_vlc == as.integer(input$vlc_filter_term))
+    if (input$vlc_filter_year != "all")
+      df <- df %>% filter(academic_year == input$vlc_filter_year)
     if (input$vlc_filter_region != "all")
       df <- df %>% filter(Region_hbk5 == input$vlc_filter_region)
     df
@@ -1347,93 +1492,90 @@ vlc_server <- function(input, output, session) {
   output$vlc_narrative_text <- renderUI({
     s   <- vlc_stats()
     df  <- vlc_filtered()
-    
+
     # Most delivered session
     top_session <- df %>%
       count(session_clean, sort = TRUE) %>%
       slice(1) %>%
       pull(session_clean)
     if (length(top_session) == 0) top_session <- "N/A"
-    
+
     # Top region
     top_region <- df %>%
       count(Region_hbk5, sort = TRUE) %>%
       slice(1) %>%
       pull(Region_hbk5)
     if (length(top_region) == 0) top_region <- "N/A"
-    
+
     # Attendance trend - compare last 2 weeks
     weekly_counts <- df %>%
       mutate(week = floor_date(session_date, "week")) %>%
       count(week) %>%
       arrange(week)
-    
+
     trend_word <- if (nrow(weekly_counts) >= 2) {
       last2 <- tail(weekly_counts$n, 2)
       if (last2[2] > last2[1]) "increasing" else if (last2[2] < last2[1]) "declining" else "stable"
     } else "developing"
-    
+
     # Date context
     date_str <- if (!is.na(s$latest_date)) format(s$latest_date, "%d %B %Y") else "the current period"
-    
+
     tagList(
       p(
         "As of ", tags$strong(date_str), ", ",
         tags$strong(
-          style = "color: #E6A817; font-size: 17px;",
+          style = "font-size: 16px;",
           format(s$schools_reporting, big.mark = ",")
         ),
         " of Ghana's ",
         tags$strong(format(TOTAL_SCHOOLS_NATIONAL, big.mark = ",")),
-        " Senior High Schools (",
+        " Senior High Schools, representing ",
         tags$strong(
           style = glue("color: {if(s$coverage_pct >= 70) '#27AE60' else if(s$coverage_pct >= 50) '#E67E22' else '#E74C3C'};"),
           paste0(s$coverage_pct, "%")
         ),
-        " national coverage) have submitted VLC session data. Across ",
+        " national coverage, have submitted VLC session data.",
+        " A total of ",
         tags$strong(
-          style = "color: #2980B9; font-size: 17px;",
+          style = "font-size: 16px;",
           format(s$total_sessions_held, big.mark = ",")
         ),
-        " sessions held, a cumulative ",
-        tags$strong(
-          style = "color: #8E44AD; font-size: 17px;",
-          format(s$total_students, big.mark = ",")
-        ),
-        " learner touchpoints have been recorded, with an average attendance rate of ",
+        " sessions have been reported, with an average attendance rate of ",
         tags$strong(
           style = glue("color: {if(s$avg_participation >= 75) '#27AE60' else if(s$avg_participation >= 55) '#E67E22' else '#E74C3C'};"),
           paste0(s$avg_participation, "%")
         ),
-        ".",
+        " per session.",
         style = "margin-bottom: 10px;"
       ),
       p(
-        "The most frequently delivered session nationally is ",
-        tags$em(tags$strong(style = "color: #E6A817;", top_session)),
-        ". The ", tags$strong(top_region), " region leads in total session submissions. 
-         School leadership engagement — a key quality signal — shows headteachers present in ",
+        tags$strong(top_session),
+        " is currently the most frequently delivered session nationwide.",
+        " The ", tags$strong(top_region),
+        " Region has recorded the highest number of session submissions to date.",
+        " Headteachers were present in ",
         tags$strong(
           style = glue("color: {if(s$ht_present_pct >= 60) '#27AE60' else '#E74C3C'};"),
           paste0(s$ht_present_pct, "%")
         ),
-        " of sessions, and Guidance & Counselling officers in ",
+        " of sessions, while Guidance and Counselling officers participated in ",
         tags$strong(paste0(s$gcc_present_pct, "%")),
-        ". On disability inclusion, ",
+        ".",
+        " Learners with disabilities were recorded in ",
         tags$strong(paste0(s$disability_rate, "%")),
-        " of sessions have recorded learners with disabilities participating — 
-         a direct measure of the equity values being taught. ",
-        "Weekly submission momentum is currently ",
+        " of sessions, indicating progress toward inclusive participation.",
+        " Weekly submission rates are currently ",
         tags$strong(
           style = glue("color: {if(trend_word == 'increasing') '#27AE60' else if(trend_word == 'declining') '#E74C3C' else '#E67E22'};"),
           trend_word
         ),
-        ". ",
+        ", and ",
         tags$strong(
           style = "color: #E74C3C;",
           format(nrow(s$low_schools), big.mark = ",")
         ),
-        " schools are flagged for priority follow-up.",
+        " schools have been identified for follow-up.",
         style = "margin-bottom: 0;"
       )
     )
@@ -1451,11 +1593,12 @@ vlc_server <- function(input, output, session) {
     )
   })
   
-  output$vlc_signal_learners <- renderUI({
+  output$vlc_signal_attendance <- renderUI({
     s <- vlc_stats()
+    col <- if (s$avg_participation >= 75) "#27AE60" else if (s$avg_participation >= 55) "#E67E22" else "#E74C3C"
     tagList(
-      div(style = "font-size: 32px; font-weight: bold; color: #2980B9;",
-          format(s$total_students, big.mark = ",")),
+      div(style = glue("font-size: 32px; font-weight: bold; color: {col};"),
+          paste0(s$avg_participation, "%")),
       div(style = "font-size: 12px; color: #555;",
           paste0("across ", s$total_sessions_held, " sessions"))
     )
@@ -1475,64 +1618,55 @@ vlc_server <- function(input, output, session) {
   # VALUE BOXES
   # --------------------------------------------------------------------------
   
-  output$vlc_kpi_submissions <- renderValueBox({
+  # ── Group 1: National Coverage ──────────────────────────────────────────────
+  output$vlc_kpi_active_schools <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      format(s$total_submissions, big.mark = ","),
-      "Total Submissions",
-      icon = icon("upload"),
-      color = "yellow"
-    )
+    col <- if (s$coverage_pct >= 70) "#27AE60" else if (s$coverage_pct >= 50) "#E67E22" else "#1B2A4A"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        paste0(s$schools_reporting, " of ", TOTAL_SCHOOLS_NATIONAL))
   })
-  
-  output$vlc_kpi_schools_held <- renderValueBox({
+
+  output$vlc_kpi_coverage_pct <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      paste0(s$schools_held, " schools"),
-      paste0(s$coverage_pct, "% Coverage"),
-      icon = icon("school"),
-      color = if (s$coverage_pct >= 70) "green" else if (s$coverage_pct >= 50) "orange" else "red"
-    )
+    col <- if (s$coverage_pct >= 70) "#27AE60" else if (s$coverage_pct >= 50) "#E67E22" else "#E74C3C"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        paste0(s$coverage_pct, "%"))
   })
-  
-  output$vlc_kpi_students <- renderValueBox({
+
+  output$vlc_kpi_followup <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      format(s$total_students, big.mark = ","),
-      "Learner Touchpoints",
-      icon = icon("users"),
-      color = "blue"
-    )
+    col <- if (nrow(s$low_schools) <= 20) "#27AE60" else if (nrow(s$low_schools) <= 50) "#E67E22" else "#E74C3C"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        nrow(s$low_schools))
   })
-  
-  output$vlc_kpi_participation <- renderValueBox({
+
+  # ── Group 2: Programme Delivery ─────────────────────────────────────────────
+  output$vlc_kpi_sessions <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      paste0(s$avg_participation, "%"),
-      "Avg Attendance Rate",
-      icon = icon("chart-bar"),
-      color = if (s$avg_participation >= 75) "green" else if (s$avg_participation >= 55) "orange" else "red"
-    )
+    div(class = "kpi-value", style = "color: #1B2A4A;",
+        format(s$total_sessions_held, big.mark = ","))
   })
-  
-  output$vlc_kpi_headteacher <- renderValueBox({
+
+  output$vlc_kpi_avg_attend <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      paste0(s$ht_present_pct, "%"),
-      "Headteacher Present",
-      icon = icon("user-tie"),
-      color = if (s$ht_present_pct >= 60) "green" else if (s$ht_present_pct >= 40) "orange" else "red"
-    )
+    col <- if (s$avg_participation >= 75) "#27AE60" else if (s$avg_participation >= 55) "#E67E22" else "#E74C3C"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        paste0(s$avg_participation, "%"))
   })
-  
-  output$vlc_kpi_disability <- renderValueBox({
+
+  # ── Group 3: Quality & Inclusion ────────────────────────────────────────────
+  output$vlc_kpi_headteacher_new <- renderUI({
     s <- vlc_stats()
-    valueBox(
-      paste0(s$disability_rate, "%"),
-      "Disability Inclusion Rate",
-      icon = icon("wheelchair"),
-      color = if (s$disability_rate >= 20) "green" else if (s$disability_rate >= 10) "orange" else "red"
-    )
+    col <- if (s$ht_present_pct >= 60) "#27AE60" else if (s$ht_present_pct >= 40) "#E67E22" else "#E74C3C"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        paste0(s$ht_present_pct, "%"))
+  })
+
+  output$vlc_kpi_disability_new <- renderUI({
+    s <- vlc_stats()
+    col <- if (s$disability_rate >= 20) "#27AE60" else if (s$disability_rate >= 10) "#E67E22" else "#E74C3C"
+    div(class = "kpi-value", style = glue("color: {col};"),
+        paste0(s$disability_rate, "%"))
   })
   
   # --------------------------------------------------------------------------
@@ -1606,53 +1740,149 @@ vlc_server <- function(input, output, session) {
   })
   
   # --------------------------------------------------------------------------
-  # PLOT: Session Coverage
+  # BLOCK 1: Rollout Progression
   # --------------------------------------------------------------------------
-  
-  output$vlc_session_coverage <- renderPlotly({
+
+  ALL_VALUE_THEMES <- c(
+    "Responsible Citizenship", "Honesty", "Integrity", "Diversity",
+    "Equity", "Discipline", "Self-Directed Learning", "Adaptability",
+    "Resourcefulness", "Leadership", "Confidence"
+  )
+
+  output$vlc_rollout_s0_pct <- renderUI({
+    df <- vlc_filtered()
+    if (nrow(df) == 0) return(div(class = "kpi-value", "—"))
+    school_sessions <- df %>%
+      group_by(Name_school_hbk5) %>%
+      summarise(has_s0 = any(session_num == 0, na.rm = TRUE), .groups = "drop")
+    pct <- round(mean(school_sessions$has_s0, na.rm = TRUE) * 100, 1)
+    tagList(
+      div(style = "font-size: 22px; font-weight: 800; color: #1B2A4A;",
+          paste0(pct, "%")),
+      div(style = "font-size: 11px; color: #718096; margin-top: 3px;",
+          "Schools Delivered Session 0")
+    )
+  })
+
+  output$vlc_rollout_2plus_pct <- renderUI({
+    df <- vlc_filtered()
+    if (nrow(df) == 0) return(div(class = "kpi-value", "—"))
+    school_sessions <- df %>%
+      group_by(Name_school_hbk5) %>%
+      summarise(n = n(), .groups = "drop")
+    pct <- round(mean(school_sessions$n >= 2, na.rm = TRUE) * 100, 1)
+    tagList(
+      div(style = "font-size: 22px; font-weight: 800; color: #1B2A4A;",
+          paste0(pct, "%")),
+      div(style = "font-size: 11px; color: #718096; margin-top: 3px;",
+          "Schools with At Least 2 Sessions")
+    )
+  })
+
+  output$vlc_rollout_avg_sessions <- renderUI({
+    df <- vlc_filtered()
+    if (nrow(df) == 0) return(div(class = "kpi-value", "—"))
+    avg <- df %>%
+      group_by(Name_school_hbk5) %>%
+      summarise(n = n(), .groups = "drop") %>%
+      summarise(avg = mean(n, na.rm = TRUE)) %>%
+      pull(avg) %>%
+      round(1)
+    tagList(
+      div(style = "font-size: 22px; font-weight: 800; color: #1B2A4A;", avg),
+      div(style = "font-size: 11px; color: #718096; margin-top: 3px;",
+          "Avg Sessions per Active School")
+    )
+  })
+
+  output$vlc_rollout_chart <- renderPlotly({
     df <- vlc_filtered() %>%
-      filter(!is.na(session_clean)) %>%
-      count(session_clean) %>%
-      left_join(
-        SESSION_CATALOGUE %>%
-          mutate(session_clean = paste0("Session ", session_number)),
-        by = c("session_clean" = "session_clean")
-      ) %>%
-      arrange(coalesce(session_number, 99L)) %>%
-      mutate(
-        label     = coalesce(session_label, session_clean),
-        label     = str_trunc(label, 35),
-        theme     = coalesce(value_theme, "Unknown"),
-        bar_color = THEME_COLOURS[theme],
-        bar_color = coalesce(bar_color, "#95A5A6")
-      )
-    
+      filter(!is.na(session_num)) %>%
+      group_by(Name_school_hbk5) %>%
+      summarise(max_session = max(session_num, na.rm = TRUE), .groups = "drop") %>%
+      mutate(stage = case_when(
+        max_session == 0 ~ "Session 0 only",
+        max_session <= 3 ~ "Sessions 1–3",
+        max_session <= 6 ~ "Sessions 4–6",
+        TRUE             ~ "Sessions 7+"
+      )) %>%
+      count(stage) %>%
+      mutate(stage = factor(stage,
+               levels = c("Session 0 only", "Sessions 1–3",
+                           "Sessions 4–6", "Sessions 7+")))
+
     if (nrow(df) == 0) {
       return(plotly_empty() %>% layout(title = "No session data available"))
     }
-    
+
+    p <- ggplot(df, aes(x = stage, y = n,
+                        text = paste0(stage, ": ", n, " schools"))) +
+      geom_col(fill = "#1B2A4A", width = 0.55) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
+      labs(x = NULL, y = "Number of Schools") +
+      theme_minimal(base_size = 11) +
+      theme(panel.grid.minor = element_blank(),
+            panel.grid.major.x = element_blank())
+
+    ggplotly(p, tooltip = "text") %>% hide_legend()
+  })
+
+  # --------------------------------------------------------------------------
+  # BLOCK 2: National Value Theme Distribution
+  # --------------------------------------------------------------------------
+
+  output$vlc_theme_national <- renderPlotly({
+    df <- vlc_filtered() %>%
+      filter(!is.na(session_clean)) %>%
+      left_join(
+        SESSION_CATALOGUE %>%
+          mutate(session_clean = paste0("Session ", session_number)),
+        by = "session_clean"
+      ) %>%
+      filter(!is.na(value_theme), value_theme != "Orientation") %>%
+      count(value_theme) %>%
+      complete(value_theme = ALL_VALUE_THEMES, fill = list(n = 0)) %>%
+      arrange(n) %>%
+      mutate(
+        bar_color = case_when(
+          n == max(n) ~ "#1B2A4A",
+          n == min(n) ~ "#8FA8C0",
+          TRUE        ~ "#4A6FA5"
+        )
+      )
+
+    if (nrow(df) == 0) {
+      return(plotly_empty() %>% layout(title = "No session data available"))
+    }
+
     p <- ggplot(df,
-                aes(x = n, y = reorder(label, coalesce(session_number, 99L)),
-                    fill = theme,
-                    text = paste0(label, "<br>Sessions delivered: ", n,
-                                  "<br>Value theme: ", theme))) +
+                aes(x = n, y = reorder(value_theme, n),
+                    fill = bar_color,
+                    text = paste0(value_theme, ": ", n, " sessions"))) +
       geom_col(width = 0.7) +
-      scale_fill_manual(values = THEME_COLOURS, guide = "none") +
+      scale_fill_identity() +
       scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
-      labs(x = "Number of Schools Delivering This Session", y = NULL) +
+      labs(x = "Total Sessions Delivered Nationally", y = NULL) +
       theme_minimal(base_size = 9) +
       theme(panel.grid.minor = element_blank(),
             panel.grid.major.y = element_blank(),
-            axis.text.y = element_text(size = 8))
-    
+            axis.text.y = element_text(size = 9))
+
     ggplotly(p, tooltip = "text") %>% hide_legend()
   })
-  
+
   # --------------------------------------------------------------------------
-  # PLOT: Value Theme × Region Heatmap
+  # BLOCK 3: Value Theme × Region Heatmap (normalized)
   # --------------------------------------------------------------------------
-  
+
   output$vlc_theme_region_heatmap <- renderPlotly({
+    # Active schools per region (denominator for normalization)
+    active_by_region <- vlc_filtered() %>%
+      filter(!is.na(Region_hbk5)) %>%
+      group_by(Region_hbk5) %>%
+      summarise(active_schools = n_distinct(Name_school_hbk5, na.rm = TRUE),
+                .groups = "drop")
+
     df <- vlc_filtered() %>%
       filter(!is.na(session_clean), !is.na(Region_hbk5)) %>%
       left_join(
@@ -1661,20 +1891,26 @@ vlc_server <- function(input, output, session) {
         by = "session_clean"
       ) %>%
       mutate(theme = coalesce(value_theme, "Unknown")) %>%
+      filter(theme != "Orientation", theme != "Unknown") %>%
       count(Region_hbk5, theme) %>%
-      complete(Region_hbk5, theme, fill = list(n = 0))
-    
+      left_join(active_by_region, by = "Region_hbk5") %>%
+      mutate(sessions_per_school = round(n / pmax(active_schools, 1), 2)) %>%
+      complete(Region_hbk5, theme = ALL_VALUE_THEMES,
+               fill = list(n = 0, sessions_per_school = 0))
+
     if (nrow(df) == 0) {
       return(plotly_empty() %>% layout(title = "No data available"))
     }
-    
+
     p <- ggplot(df,
-                aes(x = theme, y = Region_hbk5, fill = n,
+                aes(x = theme, y = Region_hbk5,
+                    fill = sessions_per_school,
                     text = paste0(Region_hbk5, " — ", theme,
-                                  "<br>Sessions: ", n))) +
+                                  "<br>Sessions per active school: ",
+                                  sessions_per_school))) +
       geom_tile(colour = "white", size = 0.5) +
-      scale_fill_gradient(low = "#FDF6E3", high = "#E6A817",
-                          name = "Sessions") +
+      scale_fill_gradient(low = "#EBF0F7", high = "#1B2A4A",
+                          name = "Sessions\nper school") +
       labs(x = NULL, y = NULL) +
       theme_minimal(base_size = 9) +
       theme(
@@ -1682,7 +1918,7 @@ vlc_server <- function(input, output, session) {
         axis.text.y = element_text(size = 8),
         panel.grid  = element_blank()
       )
-    
+
     ggplotly(p, tooltip = "text")
   })
   
@@ -2086,9 +2322,10 @@ vlc_server <- function(input, output, session) {
                padding: 12px; border-radius: 4px;",
       p(
         tags$strong(input$vlc_school_search), " (", region, ") has held ",
-        tags$strong(sessions), " VLC session(s), reaching ",
-        tags$strong(format(total_st, big.mark = ",")), " learner touchpoints. ",
-        "Average attendance is ", tags$strong(paste0(avg_p, "%")), ". ",
+        tags$strong(sessions), " VLC session(s), with a total of ",
+        tags$strong(format(total_st, big.mark = ",")),
+        " session attendances recorded. ",
+        "Average attendance per session is ", tags$strong(paste0(avg_p, "%")), ". ",
         "The most recent session was ", tags$strong(format(latest, "%d %b %Y")),
         " covering ", tags$em(latest_s), ". ",
         "The headteacher was present in ", tags$strong(paste0(ht_rate, "%")),
