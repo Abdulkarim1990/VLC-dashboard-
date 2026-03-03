@@ -191,6 +191,10 @@ prepare_vlc_data <- function(raw_data) {
         Have_any_learners_with_disabil == "no"  ~ FALSE,
         TRUE ~ NA
       ),
+      # ---- Count of learners with disabilities in the session -----------------
+      disability_learners_n = suppressWarnings(
+        as.integer(How_many_learners_wi_d_in_the_VLC_session)
+      ),
       
       # ---- Leadership presence index (0-6 scale) ------------------------------
       leadership_score = rowSums(
@@ -1243,7 +1247,7 @@ vlc_ui <- tabItem(
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
                   " Totals are cumulative across all VLC sessions held.",
-                  " \u2018Disability Sessions\u2019 = sessions where at least one learner with a disability was recorded."
+                  " \u2018Learners w/ Disabilities\u2019 = cumulative count of learners with disabilities across all sessions."
                 )
               )
             )
@@ -2253,7 +2257,7 @@ vlc_server <- function(input, output, session) {
         male_attended    = sum(male_attendance_vlc,     na.rm = TRUE),
         female_enrolled  = sum(no_female_teachers_vlc,  na.rm = TRUE),
         female_attended  = sum(female_attendance_vlc,   na.rm = TRUE),
-        disab_sessions   = sum(disability_included == TRUE, na.rm = TRUE),
+        disab_learners   = sum(disability_learners_n, na.rm = TRUE),
         .groups = "drop"
       ) %>%
       mutate(
@@ -2280,7 +2284,7 @@ vlc_server <- function(input, output, session) {
         `Male Att %`                  = male_att_pct,
         `Female Learners`             = female_learners,
         `Female Att %`                = female_att_pct,
-        `Disability Sessions`         = disab_sessions
+        `Learners w/ Disabilities`    = disab_learners
       )
 
     att_range <- c(0, 100)
@@ -2338,7 +2342,7 @@ vlc_server <- function(input, output, session) {
       ) %>%
       # Disability sessions: highlight non-zero
       DT::formatStyle(
-        "Disability Sessions",
+        "Learners w/ Disabilities",
         backgroundColor = DT::styleInterval(0, c("#FDFEFE", "#EBF5FB"))
       )
   })
