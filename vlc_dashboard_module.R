@@ -1263,7 +1263,7 @@ vlc_ui <- tabItem(
                 div(class = "vlc-chart-note",
                   icon("info-circle"),
                   " Cumulative view: totals across all sessions held.",
-                  " \u2018% Sess w/ Disab\u2019 = share of sessions that reported learners with disabilities."
+                  " \u2018Learners w/ Disabilities\u2019 = cumulative count of learners with disabilities recorded across all sessions."
                 )
               )
             )
@@ -2291,8 +2291,8 @@ vlc_server <- function(input, output, session) {
         male_attended   = sum(male_attendance_vlc,    na.rm = TRUE),
         female_enrolled = sum(no_female_teachers_vlc, na.rm = TRUE),
         female_attended = sum(female_attendance_vlc,  na.rm = TRUE),
-        # % of sessions that reported any learner with a disability
-        pct_disab       = round(mean(disability_included == TRUE, na.rm = TRUE) * 100, 0),
+        # cumulative count of learners with disabilities across all sessions
+        disab_learners  = sum(disability_learners_n, na.rm = TRUE),
         .groups = "drop"
       ) %>%
       mutate(
@@ -2312,7 +2312,7 @@ vlc_server <- function(input, output, session) {
         `Att %`                 = overall_att_pct,
         `Male Att %`            = male_att_pct,
         `Female Att %`          = female_att_pct,
-        `% Sess w/ Disab`       = pct_disab
+        `Learners w/ Disabilities` = disab_learners
       )
 
     att_range <- c(0, 100)
@@ -2376,9 +2376,9 @@ vlc_server <- function(input, output, session) {
           c("#FADBD8", "#FDEBD0", "#D5F5E3", "#A9DFBF")
         )
       ) %>%
-      # Disability share: highlight schools with any reported inclusion
+      # Disability count: highlight schools with any reported inclusion
       DT::formatStyle(
-        "% Sess w/ Disab",
+        "Learners w/ Disabilities",
         backgroundColor = DT::styleInterval(0, c("#FDFEFE", "#EBF5FB")),
         color = DT::styleInterval(0, c("#95A5A6", "#1A5276"))
       )
